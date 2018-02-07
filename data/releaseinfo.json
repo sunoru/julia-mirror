@@ -21,14 +21,6 @@
                     "https://julialangnightlies-s3.julialang.org/bin/linux/x64/julia-latest-linux64.tar.gz"
                 ],
                 [
-                    "julia-latest-linuxarmv7l.tar.gz",
-                    "https://julialangnightlies-s3.julialang.org/bin/linux/armv7l/julia-latest-linuxarmv7l.tar.gz"
-                ],
-                [
-                    "julia-latest-linuxaarch64.tar.gz",
-                    "https://julialangnightlies-s3.julialang.org/bin/linux/aarch64/julia-latest-linuxaarch64.tar.gz"
-                ],
-                [
                     "julia-latest.tar.gz",
                     "https://github.com/JuliaLang/julia/archive/master.tar.gz"
                 ]

@@ -10,10 +10,11 @@ import multiprocessing.pool
 
 class Config(object):
     DATEFMT = '%Y-%m-%d %H:%M:%S'
-    SETTINGS = ['mirror_releases', 'mirror_metadata', 'mirror_packages', 'sync_latest']
+    SETTINGS = ['mirror_releases', 'mirror_metadata', 'mirror_packages', 'sync_latest', 'ignore404']
     REMOTE_RELEASEINFO = 'https://github.com/sunoru/julia-mirror/raw/master/data/releaseinfo.json'
 
-    def __init__(self, root, mirror_releases, mirror_metadata, mirror_packages, sync_latest, force, max_processes):
+    def __init__(self, root, mirror_releases, mirror_metadata, mirror_packages, sync_latest, force, max_processes,
+                 ignore_404, logging_args):
         self.root = root
         self.mirror_releases = mirror_releases
         self.mirror_metadata = mirror_metadata
@@ -21,6 +22,8 @@ class Config(object):
         self.sync_latest = sync_latest
         self.force = force
         self.max_processes = max_processes
+        self.ignore404 = ignore_404
+        self.logging_args = logging_args
 
     def __str__(self):
         return '\n'.join(['%s=%s' % (k, getattr(self, k)) for k in self.__dict__])
@@ -56,16 +59,25 @@ def cleardir(path):
         os.remove(os.path.join(path, f))
 
 
-def download(url, path_or_filename=None):
+def download(url, path_or_filename=None, logging_file=None, logging_level=logging.WARNING):
+    logging.basicConfig(filename=logging_file, level=logging_level,
+                        format='[%(asctime)s]%(levelname)s:%(message)s', datefmt=Config.DATEFMT)
     if path_or_filename is None or os.path.isdir(path_or_filename):
         path = os.getcwd() if path_or_filename is None else path_or_filename
         filename = os.path.join(path, url.split('/')[-1])
         # overflow can be catched anyway
     else:
         filename = path_or_filename
-    # logging.info('Downloading %s to %s' % (url, filename))
-    # won't work with multiprocessing
+    logging.info('Downloading %s to %s' % (url, filename))
     urllib.request.urlretrieve(url, filename)
+
+
+def download_ignore404(url, path_or_filename=None, logging_file=None, logging_level=logging.WARNING):
+    try:
+        download(url, path_or_filename)
+    except urllib.request.HTTPError as e:
+        if e.code != 404:
+            raise e
 
 
 def get_config():
@@ -86,9 +98,12 @@ def get_config():
     parser.add_argument('--sync-latest-packages', type=float, nargs='?', default=0, const=1, metavar='N',
                         help='also mirror packages (at most %(metavar)s times in a day) on master branch ' +
                         '(default: 1)')
+    parser.add_argument('--ignore-404', action='store_true',
+                        help='ignore when a download file is not found')
     parser.add_argument('--logging-file', type=str, default=None,
                         help='save log to a file instead of to STDOUT')
-    parser.add_argument('--logging-level', type=lambda x: str(x).upper(), choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
+    parser.add_argument('--logging-level', type=lambda x: str(x).upper(),
+                        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
                         default='WARNING', help='set logging level (default: %(default)s)')
     args = parser.parse_args()
     if args.no_metadata:
@@ -102,7 +117,7 @@ def get_config():
     root = os.path.abspath(args.pathname)
     makedir(root)
     config = Config(root, not args.no_releases, not args.no_metadata, not args.no_packages,
-                    args.sync_latest_packages, args.force, args.max_processes)
+                    args.sync_latest_packages, args.force, args.max_processes, args.ignore_404, (args.logging_file, logging_level))
     logging.info('Running with settings:\n%s' % config)
     return config
 
@@ -149,7 +164,8 @@ def initialize(config):
 
 def download_all(config, path, urllist):
     with multiprocessing.pool.Pool(config.max_processes) as pool:
-        pool.starmap(download, ((url, os.path.join(path, filename)) for (filename, url) in urllist))
+        pool.starmap(download_ignore404 if config.ignore404 else download,
+                     ((url, os.path.join(path, filename), *config.logging_args) for (filename, url) in urllist))
 
 
 def fetch_releaseinfo(config, status):

@@ -42,8 +42,8 @@ def main():
     soup = BeautifulSoup(r.content, 'html.parser')
     versions = data['versions']
     h2s = soup.find_all('h2')
-    subversion_regex = re.compile('v\d+\.\d+\.\d+')
-    version_regex = re.compile('v\d+\.\d+')
+    subversion_regex = re.compile(r'v\d+\.\d+\.\d+')
+    version_regex = re.compile(r'v\d+\.\d+')
     for h2 in h2s:
         m = subversion_regex.search(h2.string)
         subversion = h2.string[m.start():m.end()]
@@ -75,8 +75,16 @@ def main():
 if __name__ == '__main__':
     main()
 
-# The following item is removed from the json file because of 404.
+# The following items are removed from the json file because of 404.
 # [
 #     "julia-latest-win32.exe",
 #     "https://julialangnightlies-s3.julialang.org/bin/winnt/x86/julia-latest-win32.exe"
+# ],
+# [
+#     "julia-latest-linuxarmv7l.tar.gz",
+#     "https://julialangnightlies-s3.julialang.org/bin/linux/armv7l/julia-latest-linuxarmv7l.tar.gz"
+# ],
+# [
+#     "julia-latest-linuxaarch64.tar.gz",
+#     "https://julialangnightlies-s3.julialang.org/bin/linux/aarch64/julia-latest-linuxaarch64.tar.gz"
 # ],

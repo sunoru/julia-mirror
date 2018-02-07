@@ -9,7 +9,7 @@ It is still a work in progress.
 ```
 usage: mirror_julia.py [-h] [--force] [--no-releases] [--no-metadata]
                        [--no-packages] [--max-processes N]
-                       [--sync-latest-packages [N]]
+                       [--sync-latest-packages [N]] [--ignore-404]
                        [--logging-file LOGGING_FILE]
                        [--logging-level {DEBUG,INFO,WARNING,ERROR}]
                        pathname
@@ -30,6 +30,7 @@ optional arguments:
   --sync-latest-packages [N]
                         also mirror packages (at most N times in a day) on
                         master branch (default: 1)
+  --ignore-404          ignore when a download file is not found
   --logging-file LOGGING_FILE
                         save log to a file instead of to STDOUT
   --logging-level {DEBUG,INFO,WARNING,ERROR}
