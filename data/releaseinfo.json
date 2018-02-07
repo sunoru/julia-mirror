@@ -318,10 +318,6 @@
             "subversion": "latest",
             "urllist": [
                 [
-                    "julia-latest-win32.exe",
-                    "https://julialangnightlies-s3.julialang.org/bin/winnt/x86/julia-latest-win32.exe"
-                ],
-                [
                     "julia-latest-win64.exe",
                     "https://julialangnightlies-s3.julialang.org/bin/winnt/x64/julia-latest-win64.exe"
                 ],
@@ -352,5 +348,5 @@
             ]
         }
     },
-    "last_updated": "2018-02-07 20:01:37"
+    "last_updated": "2018-02-07 20:45:30"
 }

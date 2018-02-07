@@ -5,7 +5,7 @@ import json
 import logging
 import os
 import urllib.request
-import multiprocessing
+import multiprocessing.pool
 
 
 class Config(object):
@@ -115,7 +115,7 @@ def _get_current_time():
 def save_status(config, status):
     status['last_updated'] = _get_current_time()
     with open(config.status_file, 'w') as fo:
-        json.dump(status, fo, indent=4)
+        json.dump(status, fo, indent=4, sort_keys=True)
 
 
 def get_current_status(config):
@@ -148,7 +148,7 @@ def initialize(config):
 
 
 def download_all(config, path, urllist):
-    with multiprocessing.Pool(config.max_processes) as pool:
+    with multiprocessing.pool.Pool(config.max_processes) as pool:
         pool.starmap(download, ((url, os.path.join(path, filename)) for (filename, url) in urllist))
 
 
@@ -181,7 +181,7 @@ def update_releases(config, status):
             need_update = True
         else:
             sv = s.get(version)
-            if sv is None or sv.get('subversion') != mv['subversion']:
+            if sv is None or sv.get('subversion') != mv['subversion'] or sv.get('last_updated') is None:
                 need_update = True
         if not need_update:
             continue

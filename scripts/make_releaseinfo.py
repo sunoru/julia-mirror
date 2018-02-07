@@ -74,3 +74,9 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+# The following item is removed from the json file because of 404.
+# [
+#     "julia-latest-win32.exe",
+#     "https://julialangnightlies-s3.julialang.org/bin/winnt/x86/julia-latest-win32.exe"
+# ],
