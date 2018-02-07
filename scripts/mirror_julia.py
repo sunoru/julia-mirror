@@ -195,6 +195,10 @@ def update_releases(config, status):
             download_list.append((version, url))
         download_all(config, version_dir, mv['urllist'])
         s[version]['last_updated'] = _get_current_time()
+        save_status(config, status)
+    s['status'] = 'updated'
+    save_status(config, status)
+    logging.info('Releases mirror update completed.')
 
 
 def update_metadata(config, status):
