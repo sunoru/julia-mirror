@@ -59,21 +59,21 @@ julia  # Mirror root
 ├── releases
 │   ├── releaseinfo.json  # Meta info for Julia releases
 │   ├── latest            # Nightly builds
-│   |   ├── julia-latest.tar.gz     # Source
-│   |   ├── julia-latest.md5        # Checksums (md5 or sha256)
-│   |   ├── julia-latest-win64.exe  # Binaries for different platforms
-|   |   └── ...
+│   │   ├── julia-latest.tar.gz     # Source
+│   │   ├── julia-latest.md5        # Checksums (md5 or sha256)
+│   │   ├── julia-latest-win64.exe  # Binaries for different platforms
+│   │   └── ...
 │   ├── v0.6              # Releases
-│   |   ├── julia-0.6.2-full.tar.gz            # Source with dependencies
-│   |   ├── julia-0.6.2-linux-i686.tar.gz.asc  # GPG signatures for tarballs
-|   |   └── ...                                # Others same as latest/
+│   │   ├── julia-0.6.2-full.tar.gz            # Source with dependencies
+│   │   ├── julia-0.6.2-linux-i686.tar.gz.asc  # GPG signatures for tarballs
+│   │   └── ...                                # Others same as latest/
 │   └── ...
 └── packages
     ├── METADATA.jl    # Mirror for the git repository of metadata.
     ├── RandomNumbers  # Packages (named without `.jl`)
-    |   ├── RandomNumbers-0.1.1.zip   # Zip files for releases. Contain git info for depth of 1.
-    |   ├── RandomNumbers-latest.zip  # if --latest-packages is set
-    |   └── ...
+    │   ├── RandomNumbers-0.1.1.zip   # Zip files for releases which contain git info for depth of 1
+    │   ├── RandomNumbers-latest.zip  # if --latest-packages is set
+    │   └── ...
     └── ...
 ```
 
