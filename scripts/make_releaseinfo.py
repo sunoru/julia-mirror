@@ -37,28 +37,34 @@ def main():
     data = {
         'versions': {}
     }
+    versions = data['versions']
+    subversion_regex = re.compile(r'v\d+\.\d+\.\d+(-\w+)?')
+    version_regex = re.compile(r'v\d+\.\d+')
+
     # Older releases
     r = requests.get('https://julialang.org/downloads/oldreleases.html')
     soup = BeautifulSoup(r.content, 'html.parser')
-    versions = data['versions']
     h2s = soup.find_all('h2')
-    subversion_regex = re.compile(r'v\d+\.\d+\.\d+')
-    version_regex = re.compile(r'v\d+\.\d+')
     for h2 in h2s:
         m = subversion_regex.search(h2.string)
         subversion = h2.string[m.start():m.end()]
         version = subversion[:version_regex.search(subversion).end()]
         table = h2.find_next('table')
         addurls(versions, version, subversion, table)
+
     # Current releases
     r = requests.get('https://julialang.org/downloads/')
     soup = BeautifulSoup(r.content, 'html.parser')
-    string = soup.find(string=subversion_regex)
-    m = subversion_regex.search(string)
-    subversion = string[m.start():m.end()]
-    version = subversion[:version_regex.search(subversion).end()]
-    table = soup.find('table')
-    addurls(versions, version, subversion, table)
+    h1s = soup.find_all('h1')
+    for h1 in h1s:
+        m = subversion_regex.search(h1.string)
+        if m is None:
+            continue
+        subversion = h1.string[m.start():m.end()]
+        version = subversion[:version_regex.search(subversion).end()]
+        table = h1.find_next('table')
+        addurls(versions, version, subversion, table)
+
     # Nightly builds
     r = requests.get('https://julialang.org/downloads/nightlies.html')
     soup = BeautifulSoup(r.content, 'html.parser')
@@ -76,10 +82,6 @@ if __name__ == '__main__':
     main()
 
 # The following items are removed from the json file because of 404.
-# [
-#     "julia-latest-win32.exe",
-#     "https://julialangnightlies-s3.julialang.org/bin/winnt/x86/julia-latest-win32.exe"
-# ],
 # [
 #     "julia-latest-linuxarmv7l.tar.gz",
 #     "https://julialangnightlies-s3.julialang.org/bin/linux/armv7l/julia-latest-linuxarmv7l.tar.gz"

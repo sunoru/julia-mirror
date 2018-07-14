@@ -1,62 +1,132 @@
 {
-    "last_updated": "2018-02-07 20:51:48",
     "versions": {
-        "latest": {
-            "subversion": "latest",
+        "v0.5": {
+            "subversion": "v0.5.2",
             "urllist": [
                 [
-                    "julia-latest-win64.exe",
-                    "https://julialangnightlies-s3.julialang.org/bin/winnt/x64/julia-latest-win64.exe"
+                    "julia-0.5.2-win32.exe",
+                    "https://julialang-s3.julialang.org/bin/winnt/x86/0.5/julia-0.5.2-win32.exe"
                 ],
                 [
-                    "julia-latest-mac64.dmg",
-                    "https://julialangnightlies-s3.julialang.org/bin/mac/x64/julia-latest-mac64.dmg"
+                    "julia-0.5.2-win64.exe",
+                    "https://julialang-s3.julialang.org/bin/winnt/x64/0.5/julia-0.5.2-win64.exe"
                 ],
                 [
-                    "julia-latest-linux32.tar.gz",
-                    "https://julialangnightlies-s3.julialang.org/bin/linux/x86/julia-latest-linux32.tar.gz"
+                    "julia-0.5.2-mac64.dmg",
+                    "https://julialang-s3.julialang.org/bin/mac/x64/0.5/julia-0.5.2-mac64.dmg"
                 ],
                 [
-                    "julia-latest-linux64.tar.gz",
-                    "https://julialangnightlies-s3.julialang.org/bin/linux/x64/julia-latest-linux64.tar.gz"
+                    "julia-0.5.2-linux-i686.tar.gz",
+                    "https://julialang-s3.julialang.org/bin/linux/x86/0.5/julia-0.5.2-linux-i686.tar.gz"
                 ],
                 [
-                    "julia-latest.tar.gz",
-                    "https://github.com/JuliaLang/julia/archive/master.tar.gz"
+                    "julia-0.5.2-linux-i686.tar.gz.asc",
+                    "https://julialang-s3.julialang.org/bin/linux/x86/0.5/julia-0.5.2-linux-i686.tar.gz.asc"
+                ],
+                [
+                    "julia-0.5.2-linux-x86_64.tar.gz",
+                    "https://julialang-s3.julialang.org/bin/linux/x64/0.5/julia-0.5.2-linux-x86_64.tar.gz"
+                ],
+                [
+                    "julia-0.5.2-linux-x86_64.tar.gz.asc",
+                    "https://julialang-s3.julialang.org/bin/linux/x64/0.5/julia-0.5.2-linux-x86_64.tar.gz.asc"
+                ],
+                [
+                    "julia-0.5.2-linux-arm.tar.gz",
+                    "https://julialang-s3.julialang.org/bin/linux/arm/0.5/julia-0.5.2-linux-arm.tar.gz"
+                ],
+                [
+                    "julia-0.5.2-linux-arm.tar.gz.asc",
+                    "https://julialang-s3.julialang.org/bin/linux/arm/0.5/julia-0.5.2-linux-arm.tar.gz.asc"
+                ],
+                [
+                    "julia-0.5.2-linux-ppc64le.tar.gz",
+                    "https://julialang-s3.julialang.org/bin/linux/ppc64le/0.5/julia-0.5.2-linux-ppc64le.tar.gz"
+                ],
+                [
+                    "julia-0.5.2-linux-ppc64le.tar.gz.asc",
+                    "https://julialang-s3.julialang.org/bin/linux/ppc64le/0.5/julia-0.5.2-linux-ppc64le.tar.gz.asc"
+                ],
+                [
+                    "julia-0.5.2.tar.gz",
+                    "https://github.com/JuliaLang/julia/releases/download/v0.5.2/julia-0.5.2.tar.gz"
+                ],
+                [
+                    "julia-0.5.2.tar.gz.asc",
+                    "https://github.com/JuliaLang/julia/releases/download/v0.5.2/julia-0.5.2.tar.gz.asc"
+                ],
+                [
+                    "julia-0.5.2-full.tar.gz",
+                    "https://github.com/JuliaLang/julia/releases/download/v0.5.2/julia-0.5.2-full.tar.gz"
+                ],
+                [
+                    "julia-0.5.2-full.tar.gz.asc",
+                    "https://github.com/JuliaLang/julia/releases/download/v0.5.2/julia-0.5.2-full.tar.gz.asc"
+                ],
+                [
+                    "julia-0.5.2.md5",
+                    "https://julialang-s3.julialang.org/bin/checksums/julia-0.5.2.md5"
+                ],
+                [
+                    "julia-0.5.2.sha256",
+                    "https://julialang-s3.julialang.org/bin/checksums/julia-0.5.2.sha256"
                 ]
             ]
         },
-        "v0.1": {
-            "subversion": "v0.1.2",
+        "v0.4": {
+            "subversion": "v0.4.7",
             "urllist": [
                 [
-                    "julia0.1.2-WINNT-i686+Git.zip",
-                    "http://julialang-s3.julialang.org/bin/winnt/x86/0.1/julia0.1.2-WINNT-i686+Git.zip"
+                    "julia-0.4.7-win32.exe",
+                    "https://julialang-s3.julialang.org/bin/winnt/x86/0.4/julia-0.4.7-win32.exe"
                 ],
                 [
-                    "julia-0.1.2-mac64.dmg",
-                    "https://julialang-s3.julialang.org/bin/mac/x64/0.1/julia-0.1.2-mac64.dmg"
+                    "julia-0.4.7-win64.exe",
+                    "https://julialang-s3.julialang.org/bin/winnt/x64/0.4/julia-0.4.7-win64.exe"
                 ],
                 [
-                    "release-0.1.tar.gz",
-                    "https://github.com/JuliaLang/julia/archive/release-0.1.tar.gz"
-                ]
-            ]
-        },
-        "v0.2": {
-            "subversion": "v0.2.1",
-            "urllist": [
-                [
-                    "julia-0.2.1-win32.exe",
-                    "http://julialang-s3.julialang.org/bin/winnt/x86/0.2/julia-0.2.1-win32.exe"
+                    "julia-0.4.7-mac64.dmg",
+                    "https://julialang-s3.julialang.org/bin/mac/x64/0.4/julia-0.4.7-mac64.dmg"
                 ],
                 [
-                    "julia-0.2.1-win64.exe",
-                    "http://julialang-s3.julialang.org/bin/winnt/x64/0.2/julia-0.2.1-win64.exe"
+                    "julia-0.4.7-linux-i686.tar.gz",
+                    "https://julialang-s3.julialang.org/bin/linux/x86/0.4/julia-0.4.7-linux-i686.tar.gz"
                 ],
                 [
-                    "julia-0.2.1-mac64.dmg",
-                    "https://julialang-s3.julialang.org/bin/mac/x64/0.2/julia-0.2.1-mac64.dmg"
+                    "julia-0.4.7-linux-i686.tar.gz.asc",
+                    "https://julialang-s3.julialang.org/bin/linux/x86/0.4/julia-0.4.7-linux-i686.tar.gz.asc"
+                ],
+                [
+                    "julia-0.4.7-linux-x86_64.tar.gz",
+                    "https://julialang-s3.julialang.org/bin/linux/x64/0.4/julia-0.4.7-linux-x86_64.tar.gz"
+                ],
+                [
+                    "julia-0.4.7-linux-x86_64.tar.gz.asc",
+                    "https://julialang-s3.julialang.org/bin/linux/x64/0.4/julia-0.4.7-linux-x86_64.tar.gz.asc"
+                ],
+                [
+                    "julia-0.4.7.tar.gz",
+                    "https://github.com/JuliaLang/julia/releases/download/v0.4.7/julia-0.4.7.tar.gz"
+                ],
+                [
+                    "julia-0.4.7.tar.gz.asc",
+                    "https://github.com/JuliaLang/julia/releases/download/v0.4.7/julia-0.4.7.tar.gz.asc"
+                ],
+                [
+                    "julia-0.4.7-full.tar.gz",
+                    "https://github.com/JuliaLang/julia/releases/download/v0.4.7/julia-0.4.7-full.tar.gz"
+                ],
+                [
+                    "julia-0.4.7-full.tar.gz.asc",
+                    "https://github.com/JuliaLang/julia/releases/download/v0.4.7/julia-0.4.7-full.tar.gz.asc"
+                ],
+                [
+                    "julia-0.4.7.md5",
+                    "https://julialang-s3.julialang.org/bin/checksums/julia-0.4.7.md5"
+                ],
+                [
+                    "julia-0.4.7.sha256",
+                    "https://julialang-s3.julialang.org/bin/checksums/julia-0.4.7.sha256"
                 ]
             ]
         },
@@ -137,208 +207,199 @@
                 ]
             ]
         },
-        "v0.4": {
-            "subversion": "v0.4.7",
+        "v0.2": {
+            "subversion": "v0.2.1",
             "urllist": [
                 [
-                    "julia-0.4.7-win32.exe",
-                    "https://julialang-s3.julialang.org/bin/winnt/x86/0.4/julia-0.4.7-win32.exe"
+                    "julia-0.2.1-win32.exe",
+                    "http://julialang-s3.julialang.org/bin/winnt/x86/0.2/julia-0.2.1-win32.exe"
                 ],
                 [
-                    "julia-0.4.7-win64.exe",
-                    "https://julialang-s3.julialang.org/bin/winnt/x64/0.4/julia-0.4.7-win64.exe"
+                    "julia-0.2.1-win64.exe",
+                    "http://julialang-s3.julialang.org/bin/winnt/x64/0.2/julia-0.2.1-win64.exe"
                 ],
                 [
-                    "julia-0.4.7-mac64.dmg",
-                    "https://julialang-s3.julialang.org/bin/mac/x64/0.4/julia-0.4.7-mac64.dmg"
-                ],
-                [
-                    "julia-0.4.7-linux-i686.tar.gz",
-                    "https://julialang-s3.julialang.org/bin/linux/x86/0.4/julia-0.4.7-linux-i686.tar.gz"
-                ],
-                [
-                    "julia-0.4.7-linux-i686.tar.gz.asc",
-                    "https://julialang-s3.julialang.org/bin/linux/x86/0.4/julia-0.4.7-linux-i686.tar.gz.asc"
-                ],
-                [
-                    "julia-0.4.7-linux-x86_64.tar.gz",
-                    "https://julialang-s3.julialang.org/bin/linux/x64/0.4/julia-0.4.7-linux-x86_64.tar.gz"
-                ],
-                [
-                    "julia-0.4.7-linux-x86_64.tar.gz.asc",
-                    "https://julialang-s3.julialang.org/bin/linux/x64/0.4/julia-0.4.7-linux-x86_64.tar.gz.asc"
-                ],
-                [
-                    "julia-0.4.7.tar.gz",
-                    "https://github.com/JuliaLang/julia/releases/download/v0.4.7/julia-0.4.7.tar.gz"
-                ],
-                [
-                    "julia-0.4.7.tar.gz.asc",
-                    "https://github.com/JuliaLang/julia/releases/download/v0.4.7/julia-0.4.7.tar.gz.asc"
-                ],
-                [
-                    "julia-0.4.7-full.tar.gz",
-                    "https://github.com/JuliaLang/julia/releases/download/v0.4.7/julia-0.4.7-full.tar.gz"
-                ],
-                [
-                    "julia-0.4.7-full.tar.gz.asc",
-                    "https://github.com/JuliaLang/julia/releases/download/v0.4.7/julia-0.4.7-full.tar.gz.asc"
-                ],
-                [
-                    "julia-0.4.7.md5",
-                    "https://julialang-s3.julialang.org/bin/checksums/julia-0.4.7.md5"
-                ],
-                [
-                    "julia-0.4.7.sha256",
-                    "https://julialang-s3.julialang.org/bin/checksums/julia-0.4.7.sha256"
+                    "julia-0.2.1-mac64.dmg",
+                    "https://julialang-s3.julialang.org/bin/mac/x64/0.2/julia-0.2.1-mac64.dmg"
                 ]
             ]
         },
-        "v0.5": {
-            "subversion": "v0.5.2",
+        "v0.1": {
+            "subversion": "v0.1.2",
             "urllist": [
                 [
-                    "julia-0.5.2-win32.exe",
-                    "https://julialang-s3.julialang.org/bin/winnt/x86/0.5/julia-0.5.2-win32.exe"
+                    "julia0.1.2-WINNT-i686+Git.zip",
+                    "http://julialang-s3.julialang.org/bin/winnt/x86/0.1/julia0.1.2-WINNT-i686+Git.zip"
                 ],
                 [
-                    "julia-0.5.2-win64.exe",
-                    "https://julialang-s3.julialang.org/bin/winnt/x64/0.5/julia-0.5.2-win64.exe"
+                    "julia-0.1.2-mac64.dmg",
+                    "https://julialang-s3.julialang.org/bin/mac/x64/0.1/julia-0.1.2-mac64.dmg"
                 ],
                 [
-                    "julia-0.5.2-mac64.dmg",
-                    "https://julialang-s3.julialang.org/bin/mac/x64/0.5/julia-0.5.2-mac64.dmg"
-                ],
-                [
-                    "julia-0.5.2-linux-i686.tar.gz",
-                    "https://julialang-s3.julialang.org/bin/linux/x86/0.5/julia-0.5.2-linux-i686.tar.gz"
-                ],
-                [
-                    "julia-0.5.2-linux-i686.tar.gz.asc",
-                    "https://julialang-s3.julialang.org/bin/linux/x86/0.5/julia-0.5.2-linux-i686.tar.gz.asc"
-                ],
-                [
-                    "julia-0.5.2-linux-x86_64.tar.gz",
-                    "https://julialang-s3.julialang.org/bin/linux/x64/0.5/julia-0.5.2-linux-x86_64.tar.gz"
-                ],
-                [
-                    "julia-0.5.2-linux-x86_64.tar.gz.asc",
-                    "https://julialang-s3.julialang.org/bin/linux/x64/0.5/julia-0.5.2-linux-x86_64.tar.gz.asc"
-                ],
-                [
-                    "julia-0.5.2-linux-arm.tar.gz",
-                    "https://julialang-s3.julialang.org/bin/linux/arm/0.5/julia-0.5.2-linux-arm.tar.gz"
-                ],
-                [
-                    "julia-0.5.2-linux-arm.tar.gz.asc",
-                    "https://julialang-s3.julialang.org/bin/linux/arm/0.5/julia-0.5.2-linux-arm.tar.gz.asc"
-                ],
-                [
-                    "julia-0.5.2-linux-ppc64le.tar.gz",
-                    "https://julialang-s3.julialang.org/bin/linux/ppc64le/0.5/julia-0.5.2-linux-ppc64le.tar.gz"
-                ],
-                [
-                    "julia-0.5.2-linux-ppc64le.tar.gz.asc",
-                    "https://julialang-s3.julialang.org/bin/linux/ppc64le/0.5/julia-0.5.2-linux-ppc64le.tar.gz.asc"
-                ],
-                [
-                    "julia-0.5.2.tar.gz",
-                    "https://github.com/JuliaLang/julia/releases/download/v0.5.2/julia-0.5.2.tar.gz"
-                ],
-                [
-                    "julia-0.5.2.tar.gz.asc",
-                    "https://github.com/JuliaLang/julia/releases/download/v0.5.2/julia-0.5.2.tar.gz.asc"
-                ],
-                [
-                    "julia-0.5.2-full.tar.gz",
-                    "https://github.com/JuliaLang/julia/releases/download/v0.5.2/julia-0.5.2-full.tar.gz"
-                ],
-                [
-                    "julia-0.5.2-full.tar.gz.asc",
-                    "https://github.com/JuliaLang/julia/releases/download/v0.5.2/julia-0.5.2-full.tar.gz.asc"
-                ],
-                [
-                    "julia-0.5.2.md5",
-                    "https://julialang-s3.julialang.org/bin/checksums/julia-0.5.2.md5"
-                ],
-                [
-                    "julia-0.5.2.sha256",
-                    "https://julialang-s3.julialang.org/bin/checksums/julia-0.5.2.sha256"
+                    "release-0.1.tar.gz",
+                    "https://github.com/JuliaLang/julia/archive/release-0.1.tar.gz"
                 ]
             ]
         },
         "v0.6": {
-            "subversion": "v0.6.2",
+            "subversion": "v0.6.4",
             "urllist": [
                 [
-                    "julia-0.6.2-win32.exe",
-                    "https://julialang-s3.julialang.org/bin/winnt/x86/0.6/julia-0.6.2-win32.exe"
+                    "julia-0.6.4-win32.exe",
+                    "https://julialang-s3.julialang.org/bin/winnt/x86/0.6/julia-0.6.4-win32.exe"
                 ],
                 [
-                    "julia-0.6.2-win64.exe",
-                    "https://julialang-s3.julialang.org/bin/winnt/x64/0.6/julia-0.6.2-win64.exe"
+                    "julia-0.6.4-win64.exe",
+                    "https://julialang-s3.julialang.org/bin/winnt/x64/0.6/julia-0.6.4-win64.exe"
                 ],
                 [
-                    "julia-0.6.2-mac64.dmg",
-                    "https://julialang-s3.julialang.org/bin/mac/x64/0.6/julia-0.6.2-mac64.dmg"
+                    "julia-0.6.4-mac64.dmg",
+                    "https://julialang-s3.julialang.org/bin/mac/x64/0.6/julia-0.6.4-mac64.dmg"
                 ],
                 [
-                    "julia-0.6.2-linux-i686.tar.gz",
-                    "https://julialang-s3.julialang.org/bin/linux/x86/0.6/julia-0.6.2-linux-i686.tar.gz"
+                    "julia-0.6.4-linux-i686.tar.gz",
+                    "https://julialang-s3.julialang.org/bin/linux/x86/0.6/julia-0.6.4-linux-i686.tar.gz"
                 ],
                 [
-                    "julia-0.6.2-linux-i686.tar.gz.asc",
-                    "https://julialang-s3.julialang.org/bin/linux/x86/0.6/julia-0.6.2-linux-i686.tar.gz.asc"
+                    "julia-0.6.4-linux-i686.tar.gz.asc",
+                    "https://julialang-s3.julialang.org/bin/linux/x86/0.6/julia-0.6.4-linux-i686.tar.gz.asc"
                 ],
                 [
-                    "julia-0.6.2-linux-x86_64.tar.gz",
-                    "https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.2-linux-x86_64.tar.gz"
+                    "julia-0.6.4-linux-x86_64.tar.gz",
+                    "https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.4-linux-x86_64.tar.gz"
                 ],
                 [
-                    "julia-0.6.2-linux-x86_64.tar.gz.asc",
-                    "https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.2-linux-x86_64.tar.gz.asc"
+                    "julia-0.6.4-linux-x86_64.tar.gz.asc",
+                    "https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.4-linux-x86_64.tar.gz.asc"
                 ],
                 [
-                    "julia-0.6.2-linux-armv7l.tar.gz",
-                    "https://julialang-s3.julialang.org/bin/linux/armv7l/0.6/julia-0.6.2-linux-armv7l.tar.gz"
+                    "julia-0.6.4.tar.gz",
+                    "https://github.com/JuliaLang/julia/releases/download/v0.6.4/julia-0.6.4.tar.gz"
                 ],
                 [
-                    "julia-0.6.2-linux-armv7l.tar.gz.asc",
-                    "https://julialang-s3.julialang.org/bin/linux/armv7l/0.6/julia-0.6.2-linux-armv7l.tar.gz.asc"
+                    "julia-0.6.4.tar.gz.asc",
+                    "https://github.com/JuliaLang/julia/releases/download/v0.6.4/julia-0.6.4.tar.gz.asc"
                 ],
                 [
-                    "julia-0.6.2-linux-aarch64.tar.gz",
-                    "https://julialang-s3.julialang.org/bin/linux/aarch64/0.6/julia-0.6.2-linux-aarch64.tar.gz"
+                    "julia-0.6.4-full.tar.gz",
+                    "https://github.com/JuliaLang/julia/releases/download/v0.6.4/julia-0.6.4-full.tar.gz"
                 ],
                 [
-                    "julia-0.6.2-linux-aarch64.tar.gz.asc",
-                    "https://julialang-s3.julialang.org/bin/linux/aarch64/0.6/julia-0.6.2-linux-aarch64.tar.gz.asc"
+                    "julia-0.6.4-full.tar.gz.asc",
+                    "https://github.com/JuliaLang/julia/releases/download/v0.6.4/julia-0.6.4-full.tar.gz.asc"
                 ],
                 [
-                    "julia-0.6.2.tar.gz",
-                    "https://github.com/JuliaLang/julia/releases/download/v0.6.2/julia-0.6.2.tar.gz"
+                    "julia-0.6.4.md5",
+                    "https://julialang-s3.julialang.org/bin/checksums/julia-0.6.4.md5"
                 ],
                 [
-                    "julia-0.6.2.tar.gz.asc",
-                    "https://github.com/JuliaLang/julia/releases/download/v0.6.2/julia-0.6.2.tar.gz.asc"
+                    "julia-0.6.4.sha256",
+                    "https://julialang-s3.julialang.org/bin/checksums/julia-0.6.4.sha256"
+                ]
+            ]
+        },
+        "v0.7": {
+            "subversion": "v0.7.0-beta2",
+            "urllist": [
+                [
+                    "julia-0.7.0-beta2-win32.exe",
+                    "https://julialang-s3.julialang.org/bin/winnt/x86/0.7/julia-0.7.0-beta2-win32.exe"
                 ],
                 [
-                    "julia-0.6.2-full.tar.gz",
-                    "https://github.com/JuliaLang/julia/releases/download/v0.6.2/julia-0.6.2-full.tar.gz"
+                    "julia-0.7.0-beta2-win64.exe",
+                    "https://julialang-s3.julialang.org/bin/winnt/x64/0.7/julia-0.7.0-beta2-win64.exe"
                 ],
                 [
-                    "julia-0.6.2-full.tar.gz.asc",
-                    "https://github.com/JuliaLang/julia/releases/download/v0.6.2/julia-0.6.2-full.tar.gz.asc"
+                    "julia-0.7.0-beta2-mac64.dmg",
+                    "https://julialang-s3.julialang.org/bin/mac/x64/0.7/julia-0.7.0-beta2-mac64.dmg"
                 ],
                 [
-                    "julia-0.6.2.md5",
-                    "https://julialang-s3.julialang.org/bin/checksums/julia-0.6.2.md5"
+                    "julia-0.7.0-beta2-linux-i686.tar.gz",
+                    "https://julialang-s3.julialang.org/bin/linux/x86/0.7/julia-0.7.0-beta2-linux-i686.tar.gz"
                 ],
                 [
-                    "julia-0.6.2.sha256",
-                    "https://julialang-s3.julialang.org/bin/checksums/julia-0.6.2.sha256"
+                    "julia-0.7.0-beta2-linux-i686.tar.gz.asc",
+                    "https://julialang-s3.julialang.org/bin/linux/x86/0.7/julia-0.7.0-beta2-linux-i686.tar.gz.asc"
+                ],
+                [
+                    "julia-0.7.0-beta2-linux-x86_64.tar.gz",
+                    "https://julialang-s3.julialang.org/bin/linux/x64/0.7/julia-0.7.0-beta2-linux-x86_64.tar.gz"
+                ],
+                [
+                    "julia-0.7.0-beta2-linux-x86_64.tar.gz.asc",
+                    "https://julialang-s3.julialang.org/bin/linux/x64/0.7/julia-0.7.0-beta2-linux-x86_64.tar.gz.asc"
+                ],
+                [
+                    "julia-0.7.0-beta2-linux-armv7l.tar.gz",
+                    "https://julialang-s3.julialang.org/bin/linux/armv7l/0.7/julia-0.7.0-beta2-linux-armv7l.tar.gz"
+                ],
+                [
+                    "julia-0.7.0-beta2-linux-armv7l.tar.gz.asc",
+                    "https://julialang-s3.julialang.org/bin/linux/armv7l/0.7/julia-0.7.0-beta2-linux-armv7l.tar.gz.asc"
+                ],
+                [
+                    "julia-0.7.0-beta2-freebsd-x86_64.tar.gz",
+                    "https://julialang-s3.julialang.org/bin/freebsd/x64/0.7/julia-0.7.0-beta2-freebsd-x86_64.tar.gz"
+                ],
+                [
+                    "julia-0.7.0-beta2-freebsd-x86_64.tar.gz.asc",
+                    "https://julialang-s3.julialang.org/bin/freebsd/x64/0.7/julia-0.7.0-beta2-freebsd-x86_64.tar.gz.asc"
+                ],
+                [
+                    "julia-0.7.0-beta2.tar.gz",
+                    "https://github.com/JuliaLang/julia/releases/download/v0.7.0-beta2/julia-0.7.0-beta2.tar.gz"
+                ],
+                [
+                    "julia-0.7.0-beta2.tar.gz.asc",
+                    "https://github.com/JuliaLang/julia/releases/download/v0.7.0-beta2/julia-0.7.0-beta2.tar.gz.asc"
+                ],
+                [
+                    "julia-0.7.0-beta2-full.tar.gz",
+                    "https://github.com/JuliaLang/julia/releases/download/v0.7.0-beta2/julia-0.7.0-beta2-full.tar.gz"
+                ],
+                [
+                    "julia-0.7.0-beta2-full.tar.gz.asc",
+                    "https://github.com/JuliaLang/julia/releases/download/v0.7.0-beta2/julia-0.7.0-beta2-full.tar.gz.asc"
+                ],
+                [
+                    "julia-0.7.0-beta2.md5",
+                    "https://julialang-s3.julialang.org/bin/checksums/julia-0.7.0-beta2.md5"
+                ],
+                [
+                    "julia-0.7.0-beta2.sha256",
+                    "https://julialang-s3.julialang.org/bin/checksums/julia-0.7.0-beta2.sha256"
+                ]
+            ]
+        },
+        "latest": {
+            "subversion": "latest",
+            "urllist": [
+                [
+                    "julia-latest-win32.exe",
+                    "https://julialangnightlies-s3.julialang.org/bin/winnt/x86/julia-latest-win32.exe"
+                ],
+                [
+                    "julia-latest-win64.exe",
+                    "https://julialangnightlies-s3.julialang.org/bin/winnt/x64/julia-latest-win64.exe"
+                ],
+                [
+                    "julia-latest-mac64.dmg",
+                    "https://julialangnightlies-s3.julialang.org/bin/mac/x64/julia-latest-mac64.dmg"
+                ],
+                [
+                    "julia-latest-linux32.tar.gz",
+                    "https://julialangnightlies-s3.julialang.org/bin/linux/x86/julia-latest-linux32.tar.gz"
+                ],
+                [
+                    "julia-latest-linux64.tar.gz",
+                    "https://julialangnightlies-s3.julialang.org/bin/linux/x64/julia-latest-linux64.tar.gz"
+                ],
+                [
+                    "julia-latest.tar.gz",
+                    "https://github.com/JuliaLang/julia/archive/master.tar.gz"
                 ]
             ]
         }
-    }
+    },
+    "last_updated": "2018-07-14 16:28:56"
 }
