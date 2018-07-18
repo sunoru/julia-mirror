@@ -1,29 +1,41 @@
 #!/usr/bin/env python3
 import argparse
 import datetime
+import glob
 import json
 import logging
+import multiprocessing.pool
 import os
 import urllib.request
-import multiprocessing.pool
+
+import git
+import toml
 
 
 class Config(object):
     DATEFMT = '%Y-%m-%d %H:%M:%S'
-    SETTINGS = ['mirror_releases', 'mirror_metadata', 'mirror_packages', 'sync_latest', 'ignore404']
+    SETTINGS = ['mirror_releases', 'mirror_metadata', 'mirror_packages',
+                'registries', 'sync_latest', 'ignore_invalid', 'ignore_404']
     REMOTE_RELEASEINFO = 'https://github.com/sunoru/julia-mirror/raw/master/data/releaseinfo.json'
+    METADATA_URL = "https://github.com/JuliaLang/METADATA.jl.git"
+    REGISTRIES = {
+        "General": "https://github.com/JuliaRegistries/General.git"
+    }
+    REGISTRY_NAMES = list(REGISTRIES.keys())
 
-    def __init__(self, root, mirror_releases, mirror_metadata, mirror_packages, sync_latest, force, max_processes,
-                 ignore_404, logging_args):
-        self.root = root
+    def __init__(self, root, mirror_releases, mirror_metadata, mirror_packages, registries, sync_latest,
+                 max_processes, ignore_invalid, ignore_404, logging_args):
+        self.root = os.path.abspath(root)
         self.mirror_releases = mirror_releases
         self.mirror_metadata = mirror_metadata
         self.mirror_packages = mirror_packages
+        self.registries = registries
         self.sync_latest = sync_latest
-        self.force = force
         self.max_processes = max_processes
-        self.ignore404 = ignore_404
+        self.ignore_invalid = ignore_invalid
+        self.ignore_404 = ignore_404
         self.logging_args = logging_args
+        self.packages = {}
 
     def __str__(self):
         return '\n'.join(['%s=%s' % (k, getattr(self, k)) for k in self.__dict__])
@@ -44,16 +56,24 @@ class Config(object):
     def packages_dir(self):
         return os.path.join(self.root, 'packages')
 
+    @property
+    def registries_dir(self):
+        return os.path.join(self.root, "registries")
+
+    @property
+    def metadata_dir(self):
+        return os.path.join(self.packages_dir, "metadata", "METADATA.jl")
+
 
 def makedir(path):
     try:
         os.mkdir(path)
     except FileExistsError:
         if not os.path.isdir(path):
-            raise Exception('%s already exists but is not a directory.' % path)
+            raise Exception('%s already exists but is not a directory' % path)
 
 
-# Be careful to use this function!
+# NOTE: Be careful to use this function!
 def cleardir(path):
     for f in os.listdir(path):
         os.remove(os.path.join(path, f))
@@ -65,16 +85,15 @@ def download(url, path_or_filename=None, logging_file=None, logging_level=loggin
     if path_or_filename is None or os.path.isdir(path_or_filename):
         path = os.getcwd() if path_or_filename is None else path_or_filename
         filename = os.path.join(path, url.split('/')[-1])
-        # overflow can be catched anyway
     else:
         filename = path_or_filename
     logging.info('Downloading %s to %s' % (url, filename))
     urllib.request.urlretrieve(url, filename)
 
 
-def download_ignore404(url, path_or_filename=None, logging_file=None, logging_level=logging.WARNING):
+def download_404_ignored(url, path_or_filename=None, logging_file=None, logging_level=logging.WARNING):
     try:
-        download(url, path_or_filename)
+        download(url, path_or_filename, logging_file, logging_level)
     except urllib.request.HTTPError as e:
         if e.code != 404:
             raise e
@@ -85,39 +104,58 @@ def get_config():
         description='Build a mirror for the Julia language.')
     parser.add_argument('pathname', type=str,
                         help='path to the root of the mirror')
-    parser.add_argument('--force', action='store_true',
-                        help='force to rebuild the mirror')
     parser.add_argument('--no-releases', action='store_true',
                         help='do not mirror Julia releases')
     parser.add_argument('--no-metadata', action='store_true',
-                        help='do not mirror METADATA.jl (and will automatically set --no-packages)')
+                        help='do not mirror METADATA.jl')
+    parser.add_argument('--no-general', action='store_true',
+                        help='do not mirror General registry (which is the default for registries)')
     parser.add_argument('--no-packages', action='store_true',
-                        help='do not mirror packages (but METADATA.jl)')
+                        help='do not mirror packages (and will be automatically set if no registries are to mirrored)')
+    parser.add_argument('--add-registry', type=str, dest='registry_names', action='append',
+                        choices=Config.REGISTRY_NAMES, default=['General'],
+                        help='add a registry specified by name')
+    parser.add_argument('--add-custom-registry', type=str, dest='custom_registries',
+                        nargs=2, action='append', default=[],
+                        help='add a registry specified by a custom URL')
     parser.add_argument('--max-processes', type=int, nargs=1, default=4, metavar='N',
                         help='use up to N processes for downloading (default: 4)')
     parser.add_argument('--sync-latest-packages', type=float, nargs='?', default=0, const=1, metavar='N',
                         help='also mirror packages (at most %(metavar)s times in a day) on master branch ' +
-                        '(default: 1)')
+                        '(default: 0, and 1 if not specified N)')
+    parser.add_argument('--ignore-invalid-registry', action='store_true',
+                        help='ignore when a registry is not valid')
     parser.add_argument('--ignore-404', action='store_true',
                         help='ignore when a download file is not found')
+    parser.add_argument('--temp-dir', type=str, default=None,
+                        help='directory for saving temporary files')
     parser.add_argument('--logging-file', type=str, default=None,
                         help='save log to a file instead of to STDOUT')
     parser.add_argument('--logging-level', type=lambda x: str(x).upper(),
                         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
                         default='WARNING', help='set logging level (default: %(default)s)')
     args = parser.parse_args()
-    if args.no_metadata:
+    registry_names = set(args.registry_names)
+    if args.no_general:
+        registry_names.discard('General')
+    registries = {name: Config.REGISTRIES[name] for name in registry_names}
+    for (name, url) in args.custom_registries:
+        if name in registries:
+            raise Exception('duplicated name for custom registry: %s' % name)
+        registries[name] = url
+    if len(registries) == 0:
         args.no_packages = True
     if args.no_packages and args.sync_latest_packages > 0:
-        raise Exception('--sync-latest-packages must not be used with --no-packages.')
+        raise Exception('--sync-latest-packages must not be used with --no-packages')
     logging_level = getattr(logging, args.logging_level, None)
     assert isinstance(logging_level, int)
     logging.basicConfig(filename=args.logging_file, level=logging_level,
                         format='[%(asctime)s]%(levelname)s:%(message)s', datefmt=Config.DATEFMT)
     root = os.path.abspath(args.pathname)
     makedir(root)
-    config = Config(root, not args.no_releases, not args.no_metadata, not args.no_packages,
-                    args.sync_latest_packages, args.force, args.max_processes, args.ignore_404, (args.logging_file, logging_level))
+    config = Config(root, not args.no_releases, not args.no_metadata, not args.no_packages, registries,
+                    args.sync_latest_packages, args.max_processes, args.ignore_invalid_registry, args.ignore_404,
+                    (args.logging_file, logging_level))
     logging.info('Running with settings:\n%s' % config)
     return config
 
@@ -154,6 +192,8 @@ def initialize(config):
     status = {
         'created_time': _get_current_time(),
         'releases': {'status': 'unavailable'},
+        'metadata': {'status': 'unavailable'},
+        'registries': {'status': 'unavailable'},
         'pacakges': {'status': 'unavailable'},
     }
     makedir(config.releases_dir)
@@ -164,12 +204,12 @@ def initialize(config):
 
 def download_all(config, path, urllist):
     with multiprocessing.pool.Pool(config.max_processes) as pool:
-        pool.starmap(download_ignore404 if config.ignore404 else download,
+        pool.starmap(download_404_ignored if config.ignore_404 else download,
                      ((url, os.path.join(path, filename), *config.logging_args) for (filename, url) in urllist))
 
 
 def fetch_releaseinfo(config, status):
-    download(Config.REMOTE_RELEASEINFO, config.releaseinfo_file)
+    download(Config.REMOTE_RELEASEINFO, config.releaseinfo_file, *config.logging_args)
     with open(config.releaseinfo_file) as fi:
         meta = json.load(fi)
     return meta
@@ -177,23 +217,19 @@ def fetch_releaseinfo(config, status):
 
 def update_releases(config, status):
     s = status['releases']
-    if config.force or s.get('created_time') is None:
+    if s.get('created_time') is None:
         s = status['releases'] = {
             'created_time': _get_current_time()
         }
     logging.info('Updating mirror for Julia releases.')
     s['status'] = 'synchronizing'
     save_status(config, status)
-    try:
-        meta = fetch_releaseinfo(config, status)
-    except Exception as e:
-        logging.error('Failed to fetch_releaseinfo')
-        raise e
-    download_list = []
+    logging.info('Fetching releaseinfo.json')
+    meta = fetch_releaseinfo(config, status)
     for version in meta['versions']:
         need_update = False
         mv = meta['versions'][version]
-        if config.force or version == 'latest':
+        if version == 'latest':
             need_update = True
         else:
             sv = s.get(version)
@@ -207,8 +243,6 @@ def update_releases(config, status):
         s[version] = {
             'subversion': 'latest' if version == 'latest' else mv['subversion']
         }
-        for url in mv['urllist']:
-            download_list.append((version, url))
         download_all(config, version_dir, mv['urllist'])
         s[version]['last_updated'] = _get_current_time()
         save_status(config, status)
@@ -217,8 +251,100 @@ def update_releases(config, status):
     logging.info('Releases mirror update completed.')
 
 
+def clone_from(url, to, mirror=False):
+    if mirror:
+        repo = git.Repo.clone_from(url, to, mirror=True)
+    else:
+        repo = git.Repo.clone_from(url, to, depth=1, shallow_submodules=True)
+    return repo
+
+
 def update_metadata(config, status):
-    logging.warning('Metadata mirror function unimplemented.')
+    s = status['metadata']
+    if s.get('created_time') is None:
+        s = status['metadata'] = {
+            'created_time': _get_current_time()
+        }
+    logging.info('Updating mirror for METADATA.jl.')
+    s['status'] = 'synchronizing'
+    save_status(config, status)
+    mirror_dir = config.metadata_dir + '.git'
+    if not os.path.exists(mirror_dir):
+        logging.info('Cloning from upstream.')
+        clone_from(Config.METADATA_URL, mirror_dir, True)
+    if not os.path.exists(config.metadata_dir):
+        logging.info('Cloning to a working tree.')
+        clone_from(mirror_dir, config.metadata_dir, False)
+    logging.info('Loading information in METADATA.jl')
+    mirror_repo = git.Repo(mirror_dir)
+    repo = git.Repo(config.metadata_dir)
+    logging.info('Fetching updates from upstream')
+    mirror_repo.remote().update()
+    repo.remote().update()
+    s['status'] = 'updated'
+    save_status(config, status)
+    logging.info('Metadata mirror update completed.')
+
+
+def update_package_list(config, name, registry_dir):
+    packages = config.packages
+    for each_dir in glob.glob('*/*'):
+        #TODO
+
+
+def update_registry(config, status, name, url):
+    s = status['registries']['registries'][name]
+    if s.get('created_time') is None:
+        s = status['registries']['registries'][name] = {
+            'created_time': _get_current_time(),
+        }
+    logging.info('Updating mirror for registry: %s.' % name)
+    s['status'] = 'synchronizing'
+    save_status(config, status)
+    registry_dir = os.path.join(config.registries_dir, name)
+    mirror_dir = registry_dir + '.git'
+    if not os.path.exists(mirror_dir):
+        logging.info('Cloning from upstream.')
+        clone_from(url, mirror_dir, True)
+    if not os.path.exists(registry_dir):
+        logging.info('Cloning to a working tree.')
+        clone_from(mirror_dir, registry_dir, False)
+    logging.info('Loading information in %s' % name)
+    mirror_repo = git.Repo(mirror_dir)
+    repo = git.Repo(registry_dir)
+    logging.info('Fetching updates from upstream')
+    mirror_repo.remote().update()
+    repo.remote().update()
+    update_package_list(config, name, registry_dir)
+    s['status'] = 'updated'
+    save_status(config, status)
+    logging.info('Registry %s mirror update completed.' % name)
+
+
+def update_registries(config, status):
+    s = status['registries']
+    if s.get('created_time') is None:
+        s = status['registries'] = {
+            'created_time': _get_current_time(),
+            'registries': {}
+        }
+    logging.info('Updating mirror for registries.')
+    s['status'] = 'synchronizing'
+    save_status(config, status)
+    for name in config.registries:
+        if name not in s['registries']:
+            s['registries'][name] = {}
+        try:
+            update_registry(config, status, name, config.registries[name])
+        except Exception as e:
+            logging.error('Failed to update registry: %s' % name)
+            s['registries'][name]['status'] = 'failed'
+            save_status(config, status)
+            if not config.ignore_invalid:
+                raise e
+    s['status'] = 'updated'
+    save_status(config, status)
+    logging.info('Registries mirror update completed.')
 
 
 def update_packages(config, status):
@@ -238,12 +364,14 @@ def try_update(name, update, config, status):
 def main():
     config = get_config()
     status = get_current_status(config)
-    if config.force or status is None:
+    if status is None:
         status = initialize(config)
     if config.mirror_releases:
         try_update('releases', update_releases, config, status)
     if config.mirror_metadata:
         try_update('metadata', update_metadata, config, status)
+    if len(config.registries) > 0:
+        try_update('registries', update_registries, config, status)
     if config.mirror_packages:
         try_update('packages', update_packages, config, status)
 
