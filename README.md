@@ -8,9 +8,11 @@ It is still a work in progress.
 
 ```
 usage: mirror_julia.py [-h] [--no-releases] [--no-metadata] [--no-general]
-                       [--no-packages] [--max-processes N]
-                       [--sync-latest-packages [N]] [--ignore-404]
-                       [--logging-file LOGGING_FILE]
+                       [--no-packages] [--add-registry {General}]
+                       [--add-custom-registry CUSTOM_REGISTRIES CUSTOM_REGISTRIES]
+                       [--max-processes N] [--sync-latest-packages]
+                       [--ignore-invalid-registry] [--ignore-404]
+                       [--temp-dir TEMP_DIR] [--logging-file LOGGING_FILE]
                        [--logging-level {DEBUG,INFO,WARNING,ERROR}]
                        pathname
 
@@ -23,14 +25,21 @@ optional arguments:
   -h, --help            show this help message and exit
   --no-releases         do not mirror Julia releases
   --no-metadata         do not mirror METADATA.jl
-  --no-general          do not mirror General (and will automatically set
-                        --no-packages)
-  --no-packages         do not mirror packages (excluding METADATA.jl)
+  --no-general          do not mirror General registry (which is the default
+                        for registries)
+  --no-packages         do not mirror packages (and will be automatically set
+                        if no registries are to mirrored)
+  --add-registry {General}
+                        add a registry specified by name
+  --add-custom-registry CUSTOM_REGISTRIES CUSTOM_REGISTRIES
+                        add a registry specified by a custom URL
   --max-processes N     use up to N processes for downloading (default: 4)
-  --sync-latest-packages [N]
-                        also mirror packages (at most N times in a day) on
-                        master branch (default: 0, and 1 if not specified N)
+  --sync-latest-packages
+                        also mirror packages on master branch
+  --ignore-invalid-registry
+                        ignore when a registry is not valid
   --ignore-404          ignore when a download file is not found
+  --temp-dir TEMP_DIR   directory for saving temporary files
   --logging-file LOGGING_FILE
                         save log to a file instead of to STDOUT
   --logging-level {DEBUG,INFO,WARNING,ERROR}
@@ -69,15 +78,31 @@ julia  # Mirror root
 │   │   └── ...                                # Others same as latest/
 │   └── ...
 │── packages
-│   ├── METADATA.jl      # Mirror for the git repository of metadata. (For Julia versions before 0.7.)
-│   ├── METADATA.jl.git  # Bare copy for the mirror of metadata.
-│   ├── RandomNumbers    # Packages (named without `.jl`)
-│   │   ├── RandomNumbers-0.1.1.zip   # Zip files for releases which contain git info for depth of 1
-│   │   ├── RandomNumbers-latest.zip  # if --latest-packages is set
+│   ├── METADATA.jl      # Mirror for the git repository of metadata (For Julia versions before 0.7)
+│   ├── METADATA.jl.git  # Bare copy for the mirror of metadata
+│   ├── RandomNumbers  # Packages (named without `.jl`)
+│   │   ├── General  # Folder with a name where the package is registered
+│   │   │   ├── RandomNumbers-v0.1.1.tar.gz         # Zip files for releases
+│   │   │   ├── RandomNumbers-v0.1.1.tar.gz.sha256  # Checksum
+│   │   │   ├── RandomNumbers-v0.1.1.git            # Git info for depth of 1 (a shallow clone). Deprecated.
+│   │   │   ├── RandomNumbers-latest.tar.gz         # if --latest-packages is set
+│   │   │   └── ...
 │   │   └── ...
 │   └── ...
 └── registries
-    │── General      # General registry for Pkg.jl (For Julia versions from 0.7)
+    ├── General      # General registry for Pkg.jl (For Julia versions from 0.7)
+    │   ├── A  # Alphabetically named folders
+    │   ├── B
+    │   ├── ...
+    │   ├── R
+    │   │   ├── RandomNumbers
+    │   │   │   ├── Package.toml   # Basic information of the package
+    │   │   │   ├── Versions.toml  # List versions of the package
+    │   │   │   ├── Deps.toml      # Dependencies of each version
+    │   │   │   ├── Compat.toml    # Compatibility of each version
+    │   │   │   └── releases       # Symbolic link to the package folder above
+    │   │   └── ...
+    │   └── ...
     └── General.git  # Bare copy for the mirror of general registry
 ```
 

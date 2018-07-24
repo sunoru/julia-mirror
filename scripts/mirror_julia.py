@@ -6,6 +6,7 @@ import json
 import logging
 import multiprocessing.pool
 import os
+import re
 import urllib.request
 
 import git
@@ -24,7 +25,7 @@ class Config(object):
     REGISTRY_NAMES = list(REGISTRIES.keys())
 
     def __init__(self, root, mirror_releases, mirror_metadata, mirror_packages, registries, sync_latest,
-                 max_processes, ignore_invalid, ignore_404, logging_args):
+                 max_processes, ignore_invalid, ignore_404, temp_dir, logging_args):
         self.root = os.path.abspath(root)
         self.mirror_releases = mirror_releases
         self.mirror_metadata = mirror_metadata
@@ -35,6 +36,7 @@ class Config(object):
         self.ignore_invalid = ignore_invalid
         self.ignore_404 = ignore_404
         self.logging_args = logging_args
+        self.temp_dir = temp_dir
         self.packages = {}
 
     def __str__(self):
@@ -67,7 +69,7 @@ class Config(object):
 
 def makedir(path):
     try:
-        os.mkdir(path)
+        os.makedirs(path)
     except FileExistsError:
         if not os.path.isdir(path):
             raise Exception('%s already exists but is not a directory' % path)
@@ -120,14 +122,13 @@ def get_config():
                         help='add a registry specified by a custom URL')
     parser.add_argument('--max-processes', type=int, nargs=1, default=4, metavar='N',
                         help='use up to N processes for downloading (default: 4)')
-    parser.add_argument('--sync-latest-packages', type=float, nargs='?', default=0, const=1, metavar='N',
-                        help='also mirror packages (at most %(metavar)s times in a day) on master branch ' +
-                        '(default: 0, and 1 if not specified N)')
+    parser.add_argument('--sync-latest-packages', action='store_true',
+                        help='also mirror packages on master branch')
     parser.add_argument('--ignore-invalid-registry', action='store_true',
                         help='ignore when a registry is not valid')
     parser.add_argument('--ignore-404', action='store_true',
                         help='ignore when a download file is not found')
-    parser.add_argument('--temp-dir', type=str, default=None,
+    parser.add_argument('--temp-dir', type=str, default='/tmp',
                         help='directory for saving temporary files')
     parser.add_argument('--logging-file', type=str, default=None,
                         help='save log to a file instead of to STDOUT')
@@ -145,7 +146,7 @@ def get_config():
         registries[name] = url
     if len(registries) == 0:
         args.no_packages = True
-    if args.no_packages and args.sync_latest_packages > 0:
+    if args.no_packages and args.sync_latest_packages:
         raise Exception('--sync-latest-packages must not be used with --no-packages')
     logging_level = getattr(logging, args.logging_level, None)
     assert isinstance(logging_level, int)
@@ -153,9 +154,11 @@ def get_config():
                         format='[%(asctime)s]%(levelname)s:%(message)s', datefmt=Config.DATEFMT)
     root = os.path.abspath(args.pathname)
     makedir(root)
-    config = Config(root, not args.no_releases, not args.no_metadata, not args.no_packages, registries,
-                    args.sync_latest_packages, args.max_processes, args.ignore_invalid_registry, args.ignore_404,
-                    (args.logging_file, logging_level))
+    config = Config(
+        root, not args.no_releases, not args.no_metadata, not args.no_packages, registries,
+        args.sync_latest_packages, args.max_processes, args.ignore_invalid_registry, args.ignore_404,
+        args.temp_dir, (args.logging_file, logging_level)
+    )
     logging.info('Running with settings:\n%s' % config)
     return config
 
@@ -165,8 +168,10 @@ def _get_current_time():
     return now.strftime(Config.DATEFMT)
 
 
-def save_status(config, status):
-    status['last_updated'] = _get_current_time()
+def save_status(config, status, name, registry_name=None):
+    status['last_updated'] = status[name]['last_updated'] = _get_current_time()
+    if registry_name is not None:
+        status['registries']['registries'][registry_name]['last_updated'] = _get_current_time()
     with open(config.status_file, 'w') as fo:
         json.dump(status, fo, indent=4, sort_keys=True)
 
@@ -223,7 +228,7 @@ def update_releases(config, status):
         }
     logging.info('Updating mirror for Julia releases.')
     s['status'] = 'synchronizing'
-    save_status(config, status)
+    save_status(config, status, 'releases')
     logging.info('Fetching releaseinfo.json')
     meta = fetch_releaseinfo(config, status)
     for version in meta['versions']:
@@ -245,17 +250,19 @@ def update_releases(config, status):
         }
         download_all(config, version_dir, mv['urllist'])
         s[version]['last_updated'] = _get_current_time()
-        save_status(config, status)
+        save_status(config, status, 'releases')
     s['status'] = 'updated'
-    save_status(config, status)
+    save_status(config, status, 'releases')
     logging.info('Releases mirror update completed.')
 
 
-def clone_from(url, to, mirror=False):
+def clone_from(url, to, mirror=False, shallow=True):
     if mirror:
         repo = git.Repo.clone_from(url, to, mirror=True)
-    else:
+    elif shallow:
         repo = git.Repo.clone_from(url, to, depth=1, shallow_submodules=True)
+    else:
+        repo = git.Repo.clone_from(url, to)
     return repo
 
 
@@ -267,14 +274,14 @@ def update_metadata(config, status):
         }
     logging.info('Updating mirror for METADATA.jl.')
     s['status'] = 'synchronizing'
-    save_status(config, status)
+    save_status(config, status, 'metadata')
     mirror_dir = config.metadata_dir + '.git'
     if not os.path.exists(mirror_dir):
         logging.info('Cloning from upstream.')
         clone_from(Config.METADATA_URL, mirror_dir, True)
     if not os.path.exists(config.metadata_dir):
         logging.info('Cloning to a working tree.')
-        clone_from(mirror_dir, config.metadata_dir, False)
+        clone_from(mirror_dir, config.metadata_dir, False, False)
     logging.info('Loading information in METADATA.jl')
     mirror_repo = git.Repo(mirror_dir)
     repo = git.Repo(config.metadata_dir)
@@ -282,14 +289,30 @@ def update_metadata(config, status):
     mirror_repo.remote().update()
     repo.remote().update()
     s['status'] = 'updated'
-    save_status(config, status)
+    save_status(config, status, 'metadata')
     logging.info('Metadata mirror update completed.')
 
 
-def update_package_list(config, name, registry_dir):
+def get_package_info(package_dir):
+    with open(os.path.join(package_dir, 'Package.toml')) as fi:
+        package_info = toml.load(fi)
+    return package_info
+
+
+def get_version_list(package_dir):
+    with open(os.path.join(package_dir, 'Versions.toml')) as fi:
+        version_list = toml.load(fi)
+    return version_list
+
+
+def update_package_list(config, registry_name, registry_dir):
     packages = config.packages
-    for each_dir in glob.glob('*/*'):
-        #TODO
+    for each_dir in glob.glob(os.path.join(registry_dir, '*/*/')):
+        package_name = os.path.basename(each_dir[:-1])
+        if package_name not in packages:
+            packages[package_name] = {}
+        packages[package_name][registry_name] = get_package_info(each_dir)
+        packages[package_name][registry_name]['versions'] = get_version_list(each_dir)
 
 
 def update_registry(config, status, name, url):
@@ -300,7 +323,7 @@ def update_registry(config, status, name, url):
         }
     logging.info('Updating mirror for registry: %s.' % name)
     s['status'] = 'synchronizing'
-    save_status(config, status)
+    save_status(config, status, 'metadata')
     registry_dir = os.path.join(config.registries_dir, name)
     mirror_dir = registry_dir + '.git'
     if not os.path.exists(mirror_dir):
@@ -308,7 +331,7 @@ def update_registry(config, status, name, url):
         clone_from(url, mirror_dir, True)
     if not os.path.exists(registry_dir):
         logging.info('Cloning to a working tree.')
-        clone_from(mirror_dir, registry_dir, False)
+        clone_from(mirror_dir, registry_dir, False, True)
     logging.info('Loading information in %s' % name)
     mirror_repo = git.Repo(mirror_dir)
     repo = git.Repo(registry_dir)
@@ -317,7 +340,7 @@ def update_registry(config, status, name, url):
     repo.remote().update()
     update_package_list(config, name, registry_dir)
     s['status'] = 'updated'
-    save_status(config, status)
+    save_status(config, status, 'registries', name)
     logging.info('Registry %s mirror update completed.' % name)
 
 
@@ -330,7 +353,7 @@ def update_registries(config, status):
         }
     logging.info('Updating mirror for registries.')
     s['status'] = 'synchronizing'
-    save_status(config, status)
+    save_status(config, status, 'registries')
     for name in config.registries:
         if name not in s['registries']:
             s['registries'][name] = {}
@@ -339,16 +362,68 @@ def update_registries(config, status):
         except Exception as e:
             logging.error('Failed to update registry: %s' % name)
             s['registries'][name]['status'] = 'failed'
-            save_status(config, status)
+            save_status(config, status, 'registries', name)
             if not config.ignore_invalid:
                 raise e
     s['status'] = 'updated'
-    save_status(config, status)
+    save_status(config, status, 'registries')
     logging.info('Registries mirror update completed.')
 
 
+def get_file_hash(filename):
+    sha256_hash = hashlib.sha256()
+    with open(filename, "rb") as f:
+        for byte_block in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(byte_block)
+    return sha256_hash.hexdigest()
+
+
+def update_package(config, status, package_name, registry):
+    logging.info('Updating mirror for package: %s (%s)' % (package_name, registry))
+    package = config.packages[package_name][registry]
+    version_list = package['versions']
+    current_dir = os.path.join(config.packages_dir, package_name, registry)
+    makedir(current_dir)
+    urllist = []
+    m = re.match(r'https://github.com/(.*?)/(.*?).git', package['repo'])
+    if m is None:
+        # TODO: Add support for non-github registries.
+        logging.warning('Packages not on github currently not supported.')
+        return
+    url_base = 'https://api.github.com/repos/%s/%s/tarball/' % m.groups()
+    for version in version_list:
+        filename = '%s-%s.tar.gz' % (package_name, version)
+        sha = version_list[version]['git-tree-sha1']
+        url = url_base + sha
+        if os.path.exists(os.path.join(current_dir, filename)):
+            continue
+        urllist.append((filename, url))
+    if config.sync_latest:
+        urllist.append(('%s-latest.tar.gz' % package_name, url_base + 'master'))
+    download_all(config, current_dir, urllist)
+    for filename, url in urllist:
+        sha256_file = filename + '.sha256'
+        sha256_hash = get_file_hash(os.path.join(current_dir, filename))
+        with open(os.path.join(current_dir, sha256_file), 'w') as fo:
+            fo.write(sha256_hash)
+            fo.write('\n')
+
+
 def update_packages(config, status):
-    logging.warning('Packages mirror function unimplemented.')
+    s = status['packages']
+    if s.get('created_time') is None:
+        s = status['packages'] = {
+            'created_time': _get_current_time()
+        }
+    logging.info('Updating mirror for packages.')
+    s['status'] = 'synchronizing'
+    save_status(config, status, 'packages')
+    for package_name in config.packages:
+        for registry in packages[package_name]:
+            update_package(config, status, package_name, registry)
+    s['status'] = 'updated'
+    save_status(config, status, 'packages')
+    logging.info('Packages mirror update completed.')
 
 
 def try_update(name, update, config, status):
@@ -357,7 +432,7 @@ def try_update(name, update, config, status):
     except Exception as e:
         logging.error('Failed to update %s' % name)
         status[name]['status'] = 'failed'
-        save_status(config, status)
+        save_status(config, status, name)
         raise e
 
 
