@@ -64,7 +64,7 @@ class Config(object):
 
     @property
     def metadata_dir(self):
-        return os.path.join(self.packages_dir, "metadata", "METADATA.jl")
+        return os.path.join(self.root, "metadata", "METADATA.jl")
 
 
 def makedir(path):
@@ -168,8 +168,11 @@ def _get_current_time():
     return now.strftime(Config.DATEFMT)
 
 
-def save_status(config, status, name, registry_name=None):
-    status['last_updated'] = status[name]['last_updated'] = _get_current_time()
+def save_status(config, status, name=None, registry_name=None):
+    status['last_updated'] = _get_current_time()
+    if name is not None:
+        status[name]['last_updated'] = status['last_updated']
+
     if registry_name is not None:
         status['registries']['registries'][registry_name]['last_updated'] = _get_current_time()
     with open(config.status_file, 'w') as fo:
@@ -331,7 +334,7 @@ def update_registry(config, status, name, url):
         clone_from(url, mirror_dir, True)
     if not os.path.exists(registry_dir):
         logging.info('Cloning to a working tree.')
-        clone_from(mirror_dir, registry_dir, False, True)
+        clone_from(mirror_dir, registry_dir, False, False)
     logging.info('Loading information in %s' % name)
     mirror_repo = git.Repo(mirror_dir)
     repo = git.Repo(registry_dir)

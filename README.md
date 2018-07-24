@@ -79,7 +79,8 @@ julia  # Mirror root
 │   └── ...
 │── packages
 │   ├── METADATA.jl      # Mirror for the git repository of metadata (For Julia versions before 0.7)
-│   ├── METADATA.jl.git  # Bare copy for the mirror of metadata
+│   └── METADATA.jl.git  # Bare copy for the mirror of metadata
+│── packages
 │   ├── RandomNumbers  # Packages (named without `.jl`)
 │   │   ├── General  # Folder with a name where the package is registered
 │   │   │   ├── RandomNumbers-v0.1.1.tar.gz         # Zip files for releases
