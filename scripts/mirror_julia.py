@@ -9,6 +9,7 @@ import multiprocessing.pool
 import os
 import re
 import shutil
+import tempfile
 import urllib.request
 
 import git
@@ -39,6 +40,7 @@ class Config(object):
         self.ignore_404 = ignore_404
         self.logging_args = logging_args
         self.temp_dir = temp_dir
+        tempfile.tempdir = temp_dir
         self.packages = {}
 
     def __str__(self):
@@ -80,9 +82,9 @@ def makedir(path):
 def makelink(src, dst):
     try:
         os.symlink(src, dst)
-    except FileExistsError as e:
+    except FileExistsError:
         if not os.path.islink(dst):
-            raise Exception('%s already exists but is not a link' % linkdir)
+            raise Exception('%s already exists but is not a link' % dst)
 
 
 # NOTE: Be careful to use this function!
@@ -104,7 +106,10 @@ def download(url, path_or_filename=None, logging_file=None, logging_level=loggin
     err = None
     while i < 3:
         try:
-            urllib.request.urlretrieve(url, filename)
+            f = tempfile.NamedTemporaryFile(delete=False)
+            f.close()
+            urllib.request.urlretrieve(url, f.name)
+            os.rename(f.name, filename)
             i = 4
         except urllib.request.HTTPError as e:
             err = e
@@ -158,7 +163,7 @@ def get_config():
                         help='ignore when a registry is not valid')
     parser.add_argument('--ignore-404', action='store_true',
                         help='ignore when a download file is not found')
-    parser.add_argument('--temp-dir', type=str, default='/tmp',
+    parser.add_argument('--temp-dir', type=str, default=None,
                         help='directory for saving temporary files')
     parser.add_argument('--logging-file', type=str, default=None,
                         help='save log to a file instead of to STDOUT')
@@ -289,13 +294,15 @@ def update_releases(config, status):
 
 
 def clone_from(url, to, mirror=False, shallow=True):
+    tempdir = tempfile.mkdtemp()
     if mirror:
-        repo = git.Repo.clone_from(url, to, mirror=True)
-        update_git_mirror(repo)
+        repo = git.Repo.clone_from(url, tempdir, mirror=True)
+        update_repo(repo)
     elif shallow:
-        repo = git.Repo.clone_from(url, to, depth=1, shallow_submodules=True)
+        repo = git.Repo.clone_from(url, tempdir, depth=1, shallow_submodules=True)
     else:
-        repo = git.Repo.clone_from(url, to)
+        repo = git.Repo.clone_from(url, tempdir)
+    os.rename(tempdir, to)
     return repo
 
 
