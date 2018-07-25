@@ -2,11 +2,13 @@
 import argparse
 import datetime
 import glob
+import hashlib
 import json
 import logging
 import multiprocessing.pool
 import os
 import re
+import shutil
 import urllib.request
 
 import git
@@ -75,6 +77,14 @@ def makedir(path):
             raise Exception('%s already exists but is not a directory' % path)
 
 
+def makelink(src, dst):
+    try:
+        os.symlink(src, dst)
+    except FileExistsError as e:
+        if not os.path.islink(dst):
+            raise Exception('%s already exists but is not a link' % linkdir)
+
+
 # NOTE: Be careful to use this function!
 def cleardir(path):
     for f in os.listdir(path):
@@ -90,7 +100,27 @@ def download(url, path_or_filename=None, logging_file=None, logging_level=loggin
     else:
         filename = path_or_filename
     logging.info('Downloading %s to %s' % (url, filename))
-    urllib.request.urlretrieve(url, filename)
+    i = 0
+    err = None
+    while i < 3:
+        try:
+            urllib.request.urlretrieve(url, filename)
+            i = 4
+        except urllib.request.HTTPError as e:
+            err = e
+            i = 3
+        except urllib.request.http.client.HTTPException as e:
+            err = e
+            i += 1
+        except urllib.error.URLError as e:
+            err = e
+            i += 1
+    if i == 3:
+        logging.error('Failed to download %s' % url)
+        logging.error(err)
+    else:
+        logging.info('Downloaded: %s' % url)
+
 
 
 def download_404_ignored(url, path_or_filename=None, logging_file=None, logging_level=logging.WARNING):
@@ -120,7 +150,7 @@ def get_config():
     parser.add_argument('--add-custom-registry', type=str, dest='custom_registries',
                         nargs=2, action='append', default=[],
                         help='add a registry specified by a custom URL')
-    parser.add_argument('--max-processes', type=int, nargs=1, default=4, metavar='N',
+    parser.add_argument('--max-processes', type=int, default=4, metavar='N',
                         help='use up to N processes for downloading (default: 4)')
     parser.add_argument('--sync-latest-packages', action='store_true',
                         help='also mirror packages on master branch')
@@ -202,10 +232,8 @@ def initialize(config):
         'releases': {'status': 'unavailable'},
         'metadata': {'status': 'unavailable'},
         'registries': {'status': 'unavailable'},
-        'pacakges': {'status': 'unavailable'},
+        'packages': {'status': 'unavailable'},
     }
-    makedir(config.releases_dir)
-    makedir(config.packages_dir)
     save_status(config, status)
     return get_current_status(config)
 
@@ -229,6 +257,7 @@ def update_releases(config, status):
         s = status['releases'] = {
             'created_time': _get_current_time()
         }
+    makedir(config.releases_dir)
     logging.info('Updating mirror for Julia releases.')
     s['status'] = 'synchronizing'
     save_status(config, status, 'releases')
@@ -262,11 +291,21 @@ def update_releases(config, status):
 def clone_from(url, to, mirror=False, shallow=True):
     if mirror:
         repo = git.Repo.clone_from(url, to, mirror=True)
+        update_git_mirror(repo)
     elif shallow:
         repo = git.Repo.clone_from(url, to, depth=1, shallow_submodules=True)
     else:
         repo = git.Repo.clone_from(url, to)
     return repo
+
+
+def update_repo(repo, mirror=False):
+    repo.remote().update()
+    if mirror:
+        hookfile = os.path.join(repo.git_dir, 'hooks/post-update')
+        if not os.path.exists(hookfile):
+            shutil.copyfile(hookfile + '.sample', hookfile)
+        os.system(hookfile)
 
 
 def update_metadata(config, status):
@@ -275,6 +314,7 @@ def update_metadata(config, status):
         s = status['metadata'] = {
             'created_time': _get_current_time()
         }
+    makedir(config.metadata_dir)
     logging.info('Updating mirror for METADATA.jl.')
     s['status'] = 'synchronizing'
     save_status(config, status, 'metadata')
@@ -289,8 +329,8 @@ def update_metadata(config, status):
     mirror_repo = git.Repo(mirror_dir)
     repo = git.Repo(config.metadata_dir)
     logging.info('Fetching updates from upstream')
-    mirror_repo.remote().update()
-    repo.remote().update()
+    update_repo(mirror_repo, True)
+    update_repo(repo, False)
     s['status'] = 'updated'
     save_status(config, status, 'metadata')
     logging.info('Metadata mirror update completed.')
@@ -339,8 +379,8 @@ def update_registry(config, status, name, url):
     mirror_repo = git.Repo(mirror_dir)
     repo = git.Repo(registry_dir)
     logging.info('Fetching updates from upstream')
-    mirror_repo.remote().update()
-    repo.remote().update()
+    update_repo(mirror_repo, True)
+    update_repo(repo, False)
     update_package_list(config, name, registry_dir)
     s['status'] = 'updated'
     save_status(config, status, 'registries', name)
@@ -381,12 +421,28 @@ def get_file_hash(filename):
     return sha256_hash.hexdigest()
 
 
+def check_hash(filename):
+    hashfile = filename + '.sha256'
+    if not os.path.exists(hashfile):
+        return False
+    hash_1 = get_file_hash(filename)
+    with open(hashfile) as fi:
+        hash_2 = fi.read().replace('\n', '')
+    return hash_1 == hash_2
+
+
 def update_package(config, status, package_name, registry):
     logging.info('Updating mirror for package: %s (%s)' % (package_name, registry))
     package = config.packages[package_name][registry]
     version_list = package['versions']
     current_dir = os.path.join(config.packages_dir, package_name, registry)
     makedir(current_dir)
+    linkdir = os.path.join(
+        config.registries_dir, registry,
+        package_name[0].upper(), package_name
+    )
+    makelink(current_dir, os.path.join(linkdir, 'releases'))
+    makelink(linkdir, os.path.join(current_dir, package_name))
     urllist = []
     m = re.match(r'https://github.com/(.*?)/(.*?).git', package['repo'])
     if m is None:
@@ -398,16 +454,20 @@ def update_package(config, status, package_name, registry):
         filename = '%s-%s.tar.gz' % (package_name, version)
         sha = version_list[version]['git-tree-sha1']
         url = url_base + sha
-        if os.path.exists(os.path.join(current_dir, filename)):
+        filepath = os.path.join(current_dir, filename)
+        if os.path.exists(filepath) and check_hash(filepath):
             continue
         urllist.append((filename, url))
     if config.sync_latest:
         urllist.append(('%s-latest.tar.gz' % package_name, url_base + 'master'))
     download_all(config, current_dir, urllist)
     for filename, url in urllist:
-        sha256_file = filename + '.sha256'
-        sha256_hash = get_file_hash(os.path.join(current_dir, filename))
-        with open(os.path.join(current_dir, sha256_file), 'w') as fo:
+        filepath = os.path.join(current_dir, filename)
+        if not os.path.exists(filepath):
+            continue
+        sha256_file = filepath + '.sha256'
+        sha256_hash = get_file_hash(filepath)
+        with open(sha256_file, 'w') as fo:
             fo.write(sha256_hash)
             fo.write('\n')
 
@@ -418,11 +478,12 @@ def update_packages(config, status):
         s = status['packages'] = {
             'created_time': _get_current_time()
         }
+    makedir(config.packages_dir)
     logging.info('Updating mirror for packages.')
     s['status'] = 'synchronizing'
     save_status(config, status, 'packages')
     for package_name in config.packages:
-        for registry in packages[package_name]:
+        for registry in config.packages[package_name]:
             update_package(config, status, package_name, registry)
     s['status'] = 'updated'
     save_status(config, status, 'packages')

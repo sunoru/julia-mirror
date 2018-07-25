@@ -83,6 +83,7 @@ julia  # Mirror root
 │── packages
 │   ├── RandomNumbers  # Packages (named without `.jl`)
 │   │   ├── General  # Folder with a name where the package is registered
+│   │   │   ├── RandomNumbers                       # Symbolic link to the package folder in the registry.
 │   │   │   ├── RandomNumbers-v0.1.1.tar.gz         # Zip files for releases
 │   │   │   ├── RandomNumbers-v0.1.1.tar.gz.sha256  # Checksum
 │   │   │   ├── RandomNumbers-v0.1.1.git            # Git info for depth of 1 (a shallow clone). Deprecated.
@@ -112,6 +113,7 @@ julia  # Mirror root
 - Python 3.x
 - Git
 - Free disk space:
-  - Julia releases: XXXX MB
-  - Packages: XXXX MB
-<!-- TODO -->
+  - Metadata: 266 MB
+  - Registries: 56MB (General)
+  - Julia releases: 2997 MB
+  - Packages: 15581 MB
