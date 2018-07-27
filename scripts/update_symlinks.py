@@ -6,9 +6,9 @@ import toml
 
 
 def makelink(src, dst):
-    if os.path.exists(dst):
+    if os.path.islink(dst):
         os.unlink(dst)
-    src = os.path.relpath(src, dst)
+    src = os.path.relpath(src, os.path.dirname(dst))
     os.symlink(src, dst)
 
 
@@ -36,11 +36,40 @@ def main():
             version_sha256 = version_filepath + '.sha256'
             if os.path.exists(version_filepath):
                 os.rename(version_filepath, filepath)
-                os.symlink(filepath, version_filepath)
+                makelink(filepath, version_filepath)
             if os.path.exists(version_sha256):
                 os.rename(version_sha256, sha256_file)
-                os.symlink(sha256_file, version_sha256)
+                makelink(sha256_file, version_sha256)
+
+
+def main2():
+    root = sys.argv[1]
+    packages_dir = os.path.join(root, 'packages')
+    registries_dir = os.path.join(root, 'registries')
+    package_list = glob.glob(os.path.join(packages_dir, '*/*/'))
+    for package in package_list:
+        registry = os.path.basename(package[:-1])
+        name = os.path.basename(os.path.dirname(package[:-1]))
+        linkdir = os.path.join(registries_dir, registry, name[0].upper(), name)
+        current_dir = package
+        print(current_dir)
+        makelink(current_dir, os.path.join(linkdir, 'releases'))
+        makelink(linkdir, os.path.join(current_dir, name))
+        with open(os.path.join(linkdir, 'Versions.toml')) as fi:
+            version_list = toml.load(fi)
+        for version in version_list:
+            sha = version_list[version]['git-tree-sha1']
+            filename = '%s-%s.tar.gz' % (name, sha)
+            filepath = os.path.join(current_dir, filename)
+            sha256_file = filepath + '.sha256'
+            version_filepath = os.path.join(current_dir, '%s-%s.tar.gz' % (name, version))
+            version_sha256 = version_filepath + '.sha256'
+            if os.path.exists(filepath):
+                makelink(filepath, version_filepath)
+            if os.path.exists(sha256_file):
+                makelink(sha256_file, version_sha256)
 
 
 if __name__ == '__main__':
-    main()
+    # main()
+    main2()

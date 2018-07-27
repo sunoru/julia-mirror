@@ -82,7 +82,7 @@ def makedir(path):
 
 def makelink(src, dst, relative=True):
     if relative:
-        src = os.path.relpath(src, dst)
+        src = os.path.relpath(src, os.path.dirname(dst))
     try:
         os.symlink(src, dst)
     except FileExistsError:
