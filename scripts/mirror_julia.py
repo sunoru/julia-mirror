@@ -3,6 +3,7 @@ import argparse
 import datetime
 import glob
 import hashlib
+import itertools
 import json
 import logging
 import multiprocessing.pool
@@ -79,7 +80,9 @@ def makedir(path):
             raise Exception('%s already exists but is not a directory' % path)
 
 
-def makelink(src, dst):
+def makelink(src, dst, relative=True):
+    if relative:
+        src = os.path.relpath(src, dst)
     try:
         os.symlink(src, dst)
     except FileExistsError:
@@ -454,21 +457,23 @@ def update_package(config, status, package_name, registry):
     m = re.match(r'https://github.com/(.*?)/(.*?).git', package['repo'])
     if m is None:
         # TODO: Add support for non-github registries.
-        logging.warning('Packages not on github currently not supported.')
+        logging.warning('Packages not on github are currently not supported.')
         return
     url_base = 'https://api.github.com/repos/%s/%s/tarball/' % m.groups()
+    verlist = []
     for version in version_list:
-        filename = '%s-%s.tar.gz' % (package_name, version)
         sha = version_list[version]['git-tree-sha1']
+        filename = '%s-%s.tar.gz' % (package_name, sha)
         url = url_base + sha
         filepath = os.path.join(current_dir, filename)
         if os.path.exists(filepath) and check_hash(filepath):
             continue
         urllist.append((filename, url))
+        verlist.append(version)
     if config.sync_latest:
         urllist.append(('%s-latest.tar.gz' % package_name, url_base + 'master'))
     download_all(config, current_dir, urllist)
-    for filename, url in urllist:
+    for version, (filename, url) in itertools.zip_longest(verlist, urllist):
         filepath = os.path.join(current_dir, filename)
         if not os.path.exists(filepath):
             continue
@@ -477,6 +482,16 @@ def update_package(config, status, package_name, registry):
         with open(sha256_file, 'w') as fo:
             fo.write(sha256_hash)
             fo.write('\n')
+        if version is None:
+            continue
+        version_filepath = os.path.join(current_dir, '%s-%s.tar.gz' % (package_name, version))
+        version_sha256 = version_filepath + '.sha256'
+        if os.path.exists(version_filepath):
+            os.unlink(version_filepath)
+        if os.path.exists(version_sha256):
+            os.unlink(version_sha256)
+        makelink(filepath, version_filepath)
+        makelink(sha256_file, version_sha256)
 
 
 def update_packages(config, status):
