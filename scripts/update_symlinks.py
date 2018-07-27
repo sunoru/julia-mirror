@@ -20,7 +20,7 @@ def main():
     for package in package_list:
         registry = os.path.basename(package[:-1])
         name = os.path.basename(os.path.dirname(package[:-1]))
-        linkdir = os.path.join(registries_dir, registry, name[0].uppder(), name)
+        linkdir = os.path.join(registries_dir, registry, name[0].upper(), name)
         current_dir = package
         print(current_dir)
         makelink(current_dir, os.path.join(linkdir, 'releases'))
