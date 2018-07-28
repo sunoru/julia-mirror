@@ -74,7 +74,7 @@ class Config(object):
 
 def makedir(path):
     try:
-        os.makedirs(path)
+        os.makedirs(path, mode=0o755)
     except FileExistsError:
         if not os.path.isdir(path):
             raise Exception('%s already exists but is not a directory' % path)
@@ -113,6 +113,7 @@ def download(url, path_or_filename=None, logging_file=None, logging_level=loggin
             f.close()
             urllib.request.urlretrieve(url, f.name)
             os.rename(f.name, filename)
+            os.chmod(filename, 0o644)
             i = 4
         except urllib.request.HTTPError as e:
             err = e
@@ -316,6 +317,8 @@ def update_repo(repo, mirror=False):
         if not os.path.exists(hookfile):
             shutil.copyfile(hookfile + '.sample', hookfile)
         os.system(hookfile)
+    else:
+        repo.remotes.origin.pull()
 
 
 def update_metadata(config, status):
