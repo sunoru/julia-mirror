@@ -10,6 +10,7 @@ import multiprocessing.pool
 import os
 import re
 import shutil
+import socket
 import tempfile
 import urllib.request
 
@@ -29,7 +30,7 @@ class Config(object):
     REGISTRY_NAMES = list(REGISTRIES.keys())
 
     def __init__(self, root, mirror_releases, mirror_metadata, mirror_packages, registries, sync_latest,
-                 max_processes, ignore_invalid, ignore_404, temp_dir, logging_args):
+                 max_processes, ignore_invalid, ignore_404, temp_dir, logging_args, mirror_name):
         self.root = os.path.abspath(root)
         self.mirror_releases = mirror_releases
         self.mirror_metadata = mirror_metadata
@@ -43,6 +44,7 @@ class Config(object):
         self.temp_dir = temp_dir
         tempfile.tempdir = temp_dir
         self.packages = {}
+        self.mirror_name = mirror_name
 
     def __str__(self):
         return '\n'.join(['%s=%s' % (k, getattr(self, k)) for k in self.__dict__])
@@ -174,6 +176,8 @@ def get_config():
     parser.add_argument('--logging-level', type=lambda x: str(x).upper(),
                         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
                         default='WARNING', help='set logging level (default: %(default)s)')
+    parser.add_argument('--mirror-name', type=str, default=socket.gethostname(),
+                        help='name of this mirror (default: %(default)s)')
     args = parser.parse_args()
     registry_names = set(args.registry_names)
     if args.no_general:
@@ -196,7 +200,7 @@ def get_config():
     config = Config(
         root, not args.no_releases, not args.no_metadata, not args.no_packages, registries,
         args.sync_latest_packages, args.max_processes, args.ignore_invalid_registry, args.ignore_404,
-        args.temp_dir, (args.logging_file, logging_level)
+        args.temp_dir, (args.logging_file, logging_level), args.mirror_name
     )
     logging.info('Running with settings:\n%s' % config)
     return config
@@ -237,6 +241,7 @@ def get_current_status(config):
 def initialize(config):
     logging.info('Creating status file and starting building mirror.')
     status = {
+        'name': config.mirror_name,
         'created_time': _get_current_time(),
         'releases': {'status': 'unavailable'},
         'metadata': {'status': 'unavailable'},
@@ -445,7 +450,7 @@ def check_hash(filename):
 
 
 def update_package(config, status, package_name, registry):
-    logging.info('Updating mirror for package: %s (%s)' % (package_name, registry))
+    logging.debug('Updating mirror for package: %s (%s)' % (package_name, registry))
     package = config.packages[package_name][registry]
     version_list = package['versions']
     current_dir = os.path.join(config.packages_dir, package_name, registry)

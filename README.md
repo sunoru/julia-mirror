@@ -14,6 +14,7 @@ usage: mirror_julia.py [-h] [--no-releases] [--no-metadata] [--no-general]
                        [--ignore-invalid-registry] [--ignore-404]
                        [--temp-dir TEMP_DIR] [--logging-file LOGGING_FILE]
                        [--logging-level {DEBUG,INFO,WARNING,ERROR}]
+                       [--mirror-name MIRROR_NAME]
                        pathname
 
 Build a mirror for the Julia language.
@@ -44,6 +45,8 @@ optional arguments:
                         save log to a file instead of to STDOUT
   --logging-level {DEBUG,INFO,WARNING,ERROR}
                         set logging level (default: WARNING)
+  --mirror-name MIRROR_NAME
+                        name of this mirror (default: $HOSTNAME))
 ```
 
 To have a simple start, download
