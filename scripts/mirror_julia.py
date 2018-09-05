@@ -282,18 +282,18 @@ def update_releases(config, status):
     for version in meta['versions']:
         need_update = False
         mv = meta['versions'][version]
+        version_dir = os.path.join(config.releases_dir, version)
+        makedir(version_dir)
         if version == 'latest':
             need_update = True
         else:
             sv = s.get(version)
             if sv is None or sv.get('subversion') != mv['subversion'] or sv.get('last_updated') is None:
                 need_update = True
-            elif len(os.listdir(os.path.join(config.releases_dir, version))) != len(mv['urllist']):
+            elif len(os.listdir(version_dir)) != len(mv['urllist']):
                 need_update = True
         if not need_update:
             continue
-        version_dir = os.path.join(config.releases_dir, version)
-        makedir(version_dir)
         cleardir(version_dir)
         s[version] = {
             'subversion': 'latest' if version == 'latest' else mv['subversion']
