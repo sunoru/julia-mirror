@@ -288,6 +288,8 @@ def update_releases(config, status):
             sv = s.get(version)
             if sv is None or sv.get('subversion') != mv['subversion'] or sv.get('last_updated') is None:
                 need_update = True
+            elif len(os.listdir(os.path.join(config.releases_dir, version))) != len(mv['urllist']):
+                need_update = True
         if not need_update:
             continue
         version_dir = os.path.join(config.releases_dir, version)
