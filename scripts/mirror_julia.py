@@ -114,6 +114,8 @@ def download(url, path_or_filename=None, logging_file=None, logging_level=loggin
             f = tempfile.NamedTemporaryFile(delete=False)
             f.close()
             urllib.request.urlretrieve(url, f.name)
+            if os.path.isfile(filename):
+                os.unlink(filename)
             os.rename(f.name, filename)
             os.chmod(filename, 0o644)
             i = 4
@@ -306,7 +308,7 @@ def clone_from(url, to, mirror=False, shallow=True):
     tempdir = tempfile.mkdtemp()
     if mirror:
         repo = git.Repo.clone_from(url, tempdir, mirror=True)
-        update_repo(repo)
+        update_repo(repo, True)
     elif shallow:
         repo = git.Repo.clone_from(url, tempdir, depth=1, shallow_submodules=True)
     else:
@@ -412,6 +414,7 @@ def update_registries(config, status):
             'created_time': _get_current_time(),
             'registries': {}
         }
+    makedir(config.registries_dir)
     logging.info('Updating mirror for registries.')
     s['status'] = 'synchronizing'
     save_status(config, status, 'registries')
