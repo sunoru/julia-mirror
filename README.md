@@ -2,8 +2,6 @@
 
 Scripts for building a mirror for the Julia language.
 
-It is still a work in progress.
-
 ## Usage
 
 ```
