@@ -12,18 +12,22 @@ def makepair(url):
 
 
 def addurls(versions, version, subversion, table):
-    assert table['class'] == ['downloads']
+    assert table['class'][0] == 'downloads'
+    get_checksum = False
     if version not in versions:
         versions[version] = {
             'subversion': subversion,
             'urllist': []
         }
+        get_checksum = True
     urllist = versions[version]['urllist']
     links = table.find_all('a')
     for link in links:
         url = link['href']
         if any(map(lambda x: url.endswith(x), ['.exe', '.dmg', '.zip', '.tar.gz', '.asc'])):
             urllist.append(makepair(url))
+    if not get_checksum:
+        return
     for checksum in ['md5', 'sha256']:
         url = 'https://julialang-s3.julialang.org/bin/checksums/julia-%s.%s' % (subversion[1:], checksum)
         t = requests.get(url)
@@ -55,14 +59,14 @@ def main():
     # Current releases
     r = requests.get('https://julialang.org/downloads/')
     soup = BeautifulSoup(r.content, 'html.parser')
-    h1s = soup.find_all('h1')
-    for h1 in h1s:
-        m = subversion_regex.search(h1.string)
+    h2s = soup.find_all('h2')
+    for h2 in h2s:
+        m = subversion_regex.search(h2.string)
         if m is None:
             continue
-        subversion = h1.string[m.start():m.end()]
+        subversion = h2.string[m.start():m.end()]
         version = subversion[:version_regex.search(subversion).end()]
-        table = h1.find_next('table')
+        table = h2.find_next('table')
         addurls(versions, version, subversion, table)
 
     # Nightly builds

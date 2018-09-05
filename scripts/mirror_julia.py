@@ -426,6 +426,8 @@ def update_registries(config, status):
             save_status(config, status, 'registries', name)
             if not config.ignore_invalid:
                 raise e
+    with open(os.path.join(config.registries_dir, "list.txt"), "w") as fo:
+        fo.writelines([name + "\n" for name in s['registries']])
     s['status'] = 'updated'
     save_status(config, status, 'registries')
     logging.info('Registries mirror update completed.')

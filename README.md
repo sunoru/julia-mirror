@@ -75,9 +75,9 @@ julia  # Mirror root
 │   │   ├── julia-latest.md5        # Checksums (md5 or sha256)
 │   │   ├── julia-latest-win64.exe  # Binaries for different platforms
 │   │   └── ...
-│   ├── v0.6              # Releases
-│   │   ├── julia-0.6.2-full.tar.gz            # Source with dependencies
-│   │   ├── julia-0.6.2-linux-i686.tar.gz.asc  # GPG signatures for tarballs
+│   ├── v1.0              # Releases
+│   │   ├── julia-1.0.0-full.tar.gz            # Source with dependencies
+│   │   ├── julia-1.0.0-linux-i686.tar.gz.asc  # GPG signatures for tarballs
 │   │   └── ...                                # Others same as latest/
 │   └── ...
 │── packages
@@ -86,11 +86,11 @@ julia  # Mirror root
 │── packages
 │   ├── RandomNumbers  # Packages (named without `.jl`)
 │   │   ├── General  # Folder with a name where the package is registered
-│   │   │   ├── RandomNumbers                       # Symbolic link to the package folder in the registry.
-│   │   │   ├── RandomNumbers-v0.1.1.tar.gz         # Zip files for releases
-│   │   │   ├── RandomNumbers-v0.1.1.tar.gz.sha256  # Checksum
-│   │   │   ├── RandomNumbers-v0.1.1.git            # Git info for depth of 1 (a shallow clone). Deprecated.
+│   │   │   ├── RandomNumbers                       # Symbolic link to the package folder in the registry
+│   │   │   ├── RandomNumbers-v1.0.1.tar.gz         # Tarballs for releases
+│   │   │   ├── RandomNumbers-v1.0.1.tar.gz.sha256  # Checksum
 │   │   │   ├── RandomNumbers-latest.tar.gz         # if --latest-packages is set
+│   │   │   ├── RandomNumbers-292ba49037aea380eb102bb923b69bf17d16289b.tar.gz  # Tarballs for releases named with tree sha1 hash
 │   │   │   └── ...
 │   │   └── ...
 │   └── ...
@@ -115,8 +115,8 @@ julia  # Mirror root
 
 - Python 3.x
 - Git
-- Free disk space:
-  - Metadata: 266 MB
-  - Registries: 56MB (General)
-  - Julia releases: 2997 MB
-  - Packages: 15581 MB
+- Free disk space (in total - about 22 GB, but increasing every day):
+  - Metadata: 324 MB
+  - Registries: 72MB (General)
+  - Julia releases: 4324 MB
+  - Packages: 16889 MB
