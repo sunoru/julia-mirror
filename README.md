@@ -47,7 +47,7 @@ optional arguments:
 ```
 
 To have a simple start, download
-[mirror_julia.py](https://github.com/sunoru/julia-mirror/raw/master/scripts/mirror_julia.py) and do:
+[mirror_julia.py](https://github.com/sunoru/julia-mirror/raw/master/scripts/mirror_julia.py) and run:
 ```bash
 $ ./mirror_julia.py /path/to/mirror/julia
 ```
@@ -56,7 +56,10 @@ General registry and releases of packages will be mirrored. The first time would
 can add this command to tools like cron for automatic update. It is also recommended to add `--logging-file` argument
 in production environments.
 
-See [Mirrors.jl](https://github.com/sunoru/Mirrors.jl) for how to use the mirror as a client.
+Since the server for git needs Smart HTTP support, nginx is recommended to be installed. See the
+[nginx config file](./config/nginx.conf) for example.
+
+See [PkgMirrors.jl](https://github.com/sunoru/PkgMirrors.jl) for how to use the mirror as a client.
 
 ## File Structure
 
@@ -114,8 +117,11 @@ julia  # Mirror root
 
 - Python 3.x
 - Git
+- Dependencies:
+  - GitPython
+  - TOML
 - Free disk space (in total - about 22 GB, but increasing every day):
-  - Metadata: 324 MB
-  - Registries: 72MB (General)
-  - Julia releases: 4324 MB
-  - Packages: 16889 MB
+  - Metadata: 324 MB
+  - Registries: 72MB (General)
+  - Julia releases: 4324 MB
+  - Packages: 16889 MB
