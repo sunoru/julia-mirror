@@ -117,7 +117,7 @@ julia  # Mirror root
 
 - Python 3.x
 - Git
-- Dependencies:
+- Dependencies (see [`requirements.txt`](./requirements.txt)):
   - GitPython
   - TOML
 - Free disk space (in total - about 22 GB, but increasing every day):
