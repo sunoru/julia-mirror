@@ -18,19 +18,22 @@ import git
 import toml
 
 
+VERSION = '1.0.0'
+
 class Config(object):
     DATEFMT = '%Y-%m-%d %H:%M:%S'
     SETTINGS = ['mirror_releases', 'mirror_metadata', 'mirror_packages',
-                'registries', 'sync_latest', 'ignore_invalid', 'ignore_404']
+                'registries', 'sync_latest', 'ignore_invalid']
     REMOTE_RELEASEINFO = 'https://github.com/sunoru/julia-mirror/raw/master/data/releaseinfo.json'
-    METADATA_URL = "https://github.com/JuliaLang/METADATA.jl.git"
+    METADATA_URL = 'https://github.com/JuliaLang/METADATA.jl.git'
+    CLIENT_URL = 'https://github.com/sunoru/PkgMirrors.jl.git'
     REGISTRIES = {
-        "General": "https://github.com/JuliaRegistries/General.git"
+        'General': 'https://github.com/JuliaRegistries/General.git'
     }
     REGISTRY_NAMES = list(REGISTRIES.keys())
 
     def __init__(self, root, mirror_releases, mirror_metadata, mirror_packages, registries, sync_latest,
-                 max_processes, ignore_invalid, ignore_404, temp_dir, logging_args, mirror_name):
+                 max_processes, ignore_invalid, temp_dir, logging_args, mirror_name):
         self.root = os.path.abspath(root)
         self.mirror_releases = mirror_releases
         self.mirror_metadata = mirror_metadata
@@ -39,7 +42,6 @@ class Config(object):
         self.sync_latest = sync_latest
         self.max_processes = max_processes
         self.ignore_invalid = ignore_invalid
-        self.ignore_404 = ignore_404
         self.logging_args = logging_args
         self.temp_dir = temp_dir
         tempfile.tempdir = temp_dir
@@ -67,11 +69,15 @@ class Config(object):
 
     @property
     def registries_dir(self):
-        return os.path.join(self.root, "registries")
+        return os.path.join(self.root, 'registries')
 
     @property
     def metadata_dir(self):
-        return os.path.join(self.root, "metadata", "METADATA.jl")
+        return os.path.join(self.root, 'metadata', 'METADATA.jl')
+
+    @property
+    def client_dir(self):
+        return os.path.join(self.root, 'PkgMirrors.jl')
 
 
 def makedir(path):
@@ -116,7 +122,7 @@ def download(url, path_or_filename=None, logging_file=None, logging_level=loggin
             urllib.request.urlretrieve(url, f.name)
             if os.path.isfile(filename):
                 os.unlink(filename)
-            os.rename(f.name, filename)
+            shutil.move(f.name, filename)
             os.chmod(filename, 0o644)
             i = 4
         except urllib.request.HTTPError as e:
@@ -133,15 +139,6 @@ def download(url, path_or_filename=None, logging_file=None, logging_level=loggin
         logging.error(err)
     else:
         logging.info('Downloaded: %s' % url)
-
-
-
-def download_404_ignored(url, path_or_filename=None, logging_file=None, logging_level=logging.WARNING):
-    try:
-        download(url, path_or_filename, logging_file, logging_level)
-    except urllib.request.HTTPError as e:
-        if e.code != 404:
-            raise e
 
 
 def get_config():
@@ -169,8 +166,6 @@ def get_config():
                         help='also mirror packages on master branch')
     parser.add_argument('--ignore-invalid-registry', action='store_true',
                         help='ignore when a registry is not valid')
-    parser.add_argument('--ignore-404', action='store_true',
-                        help='ignore when a download file is not found')
     parser.add_argument('--temp-dir', type=str, default=None,
                         help='directory for saving temporary files')
     parser.add_argument('--logging-file', type=str, default=None,
@@ -201,7 +196,7 @@ def get_config():
     makedir(root)
     config = Config(
         root, not args.no_releases, not args.no_metadata, not args.no_packages, registries,
-        args.sync_latest_packages, args.max_processes, args.ignore_invalid_registry, args.ignore_404,
+        args.sync_latest_packages, args.max_processes, args.ignore_invalid_registry,
         args.temp_dir, (args.logging_file, logging_level), args.mirror_name
     )
     logging.info('Running with settings:\n%s' % config)
@@ -240,24 +235,29 @@ def get_current_status(config):
     return status
 
 
-def initialize(config):
-    logging.info('Creating status file and starting building mirror.')
-    status = {
-        'name': config.mirror_name,
-        'created_time': _get_current_time(),
-        'releases': {'status': 'unavailable'},
-        'metadata': {'status': 'unavailable'},
-        'registries': {'status': 'unavailable'},
-        'packages': {'status': 'unavailable'},
-    }
+def initialize(config, status):
+    if status is None:
+        logging.info('Creating status file and starting building mirror.')
+        status = {}
+    def set_status(name, value, force=False):
+        if force or name not in status:
+            status[name] = value
+    set_status('name', config.mirror_name, True)
+    set_status('created_time', _get_current_time())
+    set_status('releases', {'status': 'unavailable'})
+    set_status('metadata', {'status': 'unavailable'})
+    set_status('registries', {'status': 'unavailable'})
+    set_status('packages', {'status': 'unavailable'})
+    set_status('mirror_version', VERSION, True)
+    set_status('client', {'status': 'unavailable'})
     save_status(config, status)
     return get_current_status(config)
 
 
 def download_all(config, path, urllist):
     with multiprocessing.pool.Pool(config.max_processes) as pool:
-        pool.starmap(download_404_ignored if config.ignore_404 else download,
-                     ((url, os.path.join(path, filename), *config.logging_args) for (filename, url) in urllist))
+        pool.starmap(download, ((url, os.path.join(path, filename), *config.logging_args)
+                                for (filename, url) in urllist))
 
 
 def fetch_releaseinfo(config, status):
@@ -315,7 +315,7 @@ def clone_from(url, to, mirror=False, shallow=True):
         repo = git.Repo.clone_from(url, tempdir, depth=1, shallow_submodules=True)
     else:
         repo = git.Repo.clone_from(url, tempdir)
-    os.rename(tempdir, to)
+    shutil.move(tempdir, to)
     return repo
 
 
@@ -431,8 +431,8 @@ def update_registries(config, status):
             save_status(config, status, 'registries', name)
             if not config.ignore_invalid:
                 raise e
-    with open(os.path.join(config.registries_dir, "list.txt"), "w") as fo:
-        fo.writelines([name + "\n" for name in s['registries']])
+    with open(os.path.join(config.registries_dir, 'list.txt'), 'w') as fo:
+        fo.writelines([name + '\n' for name in s['registries']])
     s['status'] = 'updated'
     save_status(config, status, 'registries')
     logging.info('Registries mirror update completed.')
@@ -440,8 +440,8 @@ def update_registries(config, status):
 
 def get_file_hash(filename):
     sha256_hash = hashlib.sha256()
-    with open(filename, "rb") as f:
-        for byte_block in iter(lambda: f.read(4096), b""):
+    with open(filename, 'rb') as f:
+        for byte_block in iter(lambda: f.read(4096), b''):
             sha256_hash.update(byte_block)
     return sha256_hash.hexdigest()
 
@@ -527,6 +527,34 @@ def update_packages(config, status):
     logging.info('Packages mirror update completed.')
 
 
+def update_client(config, status):
+    s = status['client']
+    if s.get('created_time') is None:
+        s = status['client'] = {
+            'created_time': _get_current_time()
+        }
+    makedir(config.client_dir)
+    logging.info('Updating mirror for PkgMirrors.jl.')
+    s['status'] = 'synchronizing'
+    save_status(config, status, 'client')
+    mirror_dir = config.client_dir + '.git'
+    if not os.path.exists(mirror_dir):
+        logging.info('Cloning from upstream.')
+        clone_from(Config.CLIENT_URL, mirror_dir, True)
+    if not os.path.exists(config.client_dir):
+        logging.info('Cloning to a working tree.')
+        clone_from(mirror_dir, config.client_dir, False, False)
+    logging.info('Loading information in PkgMirrors.jl')
+    mirror_repo = git.Repo(mirror_dir)
+    repo = git.Repo(config.client_dir)
+    logging.info('Fetching updates from upstream')
+    update_repo(mirror_repo, True)
+    update_repo(repo, False)
+    s['status'] = 'updated'
+    save_status(config, status, 'client')
+    logging.info('Client mirror update completed.')
+
+
 def try_update(name, update, config, status):
     try:
         update(config, status)
@@ -540,8 +568,9 @@ def try_update(name, update, config, status):
 def main():
     config = get_config()
     status = get_current_status(config)
-    if status is None:
-        status = initialize(config)
+    if status is None or status.get('mirror_version') != VERSION:
+        status = initialize(config, status)
+    try_update('client', update_client, config, status)
     if config.mirror_releases:
         try_update('releases', update_releases, config, status)
     if config.mirror_metadata:
