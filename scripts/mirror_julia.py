@@ -314,7 +314,10 @@ def clone_from(url, to, mirror=False, shallow=True):
         repo = git.Repo.clone_from(url, tempdir, depth=1, shallow_submodules=True)
     else:
         repo = git.Repo.clone_from(url, tempdir)
+    if os.path.exists(to):
+        shutil.rmtree(to)
     shutil.move(tempdir, to)
+    os.chmod(to, 0o755)
     return repo
 
 
