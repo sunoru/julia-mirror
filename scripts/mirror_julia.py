@@ -324,6 +324,7 @@ def update_repo(repo, mirror=False):
         hookfile = os.path.join(repo.git_dir, 'hooks/post-update')
         if not os.path.exists(hookfile):
             shutil.copyfile(hookfile + '.sample', hookfile)
+            shutil.copymode(hookfile + '.sample', hookfile)
         os.system(hookfile)
     else:
         repo.remotes.origin.pull()
