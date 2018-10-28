@@ -9,8 +9,8 @@ usage: mirror_julia.py [-h] [--no-releases] [--no-metadata] [--no-general]
                        [--no-packages] [--add-registry {General}]
                        [--add-custom-registry CUSTOM_REGISTRIES CUSTOM_REGISTRIES]
                        [--max-processes N] [--sync-latest-packages]
-                       [--ignore-invalid-registry] [--ignore-404]
-                       [--temp-dir TEMP_DIR] [--logging-file LOGGING_FILE]
+                       [--ignore-invalid-registry] [--temp-dir TEMP_DIR]
+                       [--logging-file LOGGING_FILE]
                        [--logging-level {DEBUG,INFO,WARNING,ERROR}]
                        [--mirror-name MIRROR_NAME]
                        pathname
@@ -37,14 +37,13 @@ optional arguments:
                         also mirror packages on master branch
   --ignore-invalid-registry
                         ignore when a registry is not valid
-  --ignore-404          ignore when a download file is not found
   --temp-dir TEMP_DIR   directory for saving temporary files
   --logging-file LOGGING_FILE
                         save log to a file instead of to STDOUT
   --logging-level {DEBUG,INFO,WARNING,ERROR}
                         set logging level (default: WARNING)
   --mirror-name MIRROR_NAME
-                        name of this mirror (default: $HOSTNAME))
+                        name of this mirror (default: $HOSTNAME)
 ```
 
 To have a simple start, download
@@ -78,10 +77,11 @@ julia  # Mirror root
 │   │   ├── julia-1.0.0-linux-i686.tar.gz.asc  # GPG signatures for tarballs
 │   │   └── ...                                # Others same as latest/
 │   └── ...
-│── packages
+├── PkgMirrors.jl.git  # Bare copy for the mirror of the client
+├── metadata
 │   ├── METADATA.jl      # Mirror for the git repository of metadata (For Julia versions before 0.7)
 │   └── METADATA.jl.git  # Bare copy for the mirror of metadata
-│── packages
+├── packages
 │   ├── RandomNumbers  # Packages (named without `.jl`)
 │   │   ├── General  # Folder with a name where the package is registered
 │   │   │   ├── RandomNumbers                       # Symbolic link to the package folder in the registry
@@ -93,6 +93,7 @@ julia  # Mirror root
 │   │   └── ...
 │   └── ...
 └── registries
+    ├── list.txt     # List of registry names
     ├── General      # General registry for Pkg.jl (For Julia versions from 0.7)
     │   ├── A  # Alphabetically named folders
     │   ├── B

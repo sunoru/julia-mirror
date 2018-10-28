@@ -76,8 +76,8 @@ class Config(object):
         return os.path.join(self.root, 'metadata', 'METADATA.jl')
 
     @property
-    def client_dir(self):
-        return os.path.join(self.root, 'PkgMirrors.jl')
+    def client_mirror_dir(self):
+        return os.path.join(self.root, 'PkgMirrors.jl.git')
 
 
 def makedir(path):
@@ -533,23 +533,17 @@ def update_client(config, status):
         s = status['client'] = {
             'created_time': _get_current_time()
         }
-    makedir(config.client_dir)
     logging.info('Updating mirror for PkgMirrors.jl.')
     s['status'] = 'synchronizing'
     save_status(config, status, 'client')
-    mirror_dir = config.client_dir + '.git'
+    mirror_dir = config.client_mirror_dir
     if not os.path.exists(mirror_dir):
         logging.info('Cloning from upstream.')
         clone_from(Config.CLIENT_URL, mirror_dir, True)
-    if not os.path.exists(config.client_dir):
-        logging.info('Cloning to a working tree.')
-        clone_from(mirror_dir, config.client_dir, False, False)
     logging.info('Loading information in PkgMirrors.jl')
     mirror_repo = git.Repo(mirror_dir)
-    repo = git.Repo(config.client_dir)
     logging.info('Fetching updates from upstream')
     update_repo(mirror_repo, True)
-    update_repo(repo, False)
     s['status'] = 'updated'
     save_status(config, status, 'client')
     logging.info('Client mirror update completed.')
