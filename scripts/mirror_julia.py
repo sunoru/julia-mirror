@@ -310,7 +310,6 @@ def clone_from(url, to, mirror=False, shallow=True):
     tempdir = tempfile.mkdtemp()
     if mirror:
         repo = git.Repo.clone_from(url, tempdir, mirror=True)
-        update_repo(repo, True)
     elif shallow:
         repo = git.Repo.clone_from(url, tempdir, depth=1, shallow_submodules=True)
     else:
