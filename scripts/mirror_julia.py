@@ -347,7 +347,7 @@ def update_metadata(config, status):
     if not os.path.exists(mirror_dir):
         logging.info('Cloning from upstream.')
         clone_from(Config.METADATA_URL, mirror_dir, True)
-    if not os.path.exists(config.metadata_dir):
+    if not os.path.exists(os.path.join(config.metadata_dir, '.git')):
         logging.info('Cloning to a working tree.')
         clone_from(mirror_dir, config.metadata_dir, False, False)
     logging.info('Loading information in METADATA.jl')
@@ -397,7 +397,7 @@ def update_registry(config, status, name, url):
     if not os.path.exists(mirror_dir):
         logging.info('Cloning from upstream.')
         clone_from(url, mirror_dir, True)
-    if not os.path.exists(registry_dir):
+    if not os.path.exists(os.path.join(registry_dir, '.git')):
         logging.info('Cloning to a working tree.')
         clone_from(mirror_dir, registry_dir, False, False)
     logging.info('Loading information in %s' % name)
