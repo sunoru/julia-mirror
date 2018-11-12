@@ -134,6 +134,9 @@ def download(url, path_or_filename=None, logging_file=None, logging_level=loggin
         except urllib.error.URLError as e:
             err = e
             i += 1
+        except ConnectionError as e:
+            err = e
+            i += 1
     if i == 3:
         logging.error('Failed to download %s' % url)
         logging.error(err)
