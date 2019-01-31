@@ -385,7 +385,10 @@ def update_metadata(config, status):
 
 
 def get_package_info(package_dir):
-    with open(os.path.join(package_dir, 'Package.toml')) as fi:
+    package_file = os.path.join(package_dir, 'Package.toml')
+    if not os.path.isfile(package_file):
+        return None
+    with open(package_file) as fi:
         package_info = toml.load(fi)
     return package_info
 
@@ -396,13 +399,40 @@ def get_version_list(package_dir):
     return version_list
 
 
+def remove_empty_dir(dirname):
+    if len(os.listdir(dirname)) == 0:
+        os.rmdir(dirname)
+        parent = os.path.abspath(os.path.join(dirname, os.pardir))
+        remove_empty_dir(parent)
+
+
+def delete_package(config, package_name, registry_name):
+    # in registry
+    package_dir = os.path.join(config.registries_dir, registry_name, package_name[0].upper(), package_name)
+    files = os.listdir(package_dir) if os.path.isdir(package_dir) else []
+    if len(files) == 1 and files[0] == 'releases':
+        os.unlink(os.path.join(package_dir, 'releases'))
+        remove_empty_dir(package_dir)
+    # in packages
+    package_dir = os.path.join(config.packages_dir, package_name, registry_name)
+    package_link = os.path.join(package_dir, package_name)
+    if os.path.islink(package_link):
+        os.unlink(package_link)
+        cleardir(package_dir)
+        remove_empty_dir(package_dir)
+
+
 def update_package_list(config, registry_name, registry_dir):
     packages = config.packages
     for each_dir in glob.glob(os.path.join(registry_dir, '*/*/')):
         package_name = os.path.basename(each_dir[:-1])
+        package_info = get_package_info(each_dir)
+        if package_info is None:
+            delete_package(config, package_name, registry_name)
+            continue
         if package_name not in packages:
             packages[package_name] = {}
-        packages[package_name][registry_name] = get_package_info(each_dir)
+        packages[package_name][registry_name] = package_info
         packages[package_name][registry_name]['versions'] = get_version_list(each_dir)
 
 
