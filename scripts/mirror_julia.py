@@ -11,6 +11,7 @@ import os
 import re
 import shutil
 import socket
+import sys
 import tempfile
 import urllib.request
 
@@ -80,6 +81,29 @@ class Config(object):
         return os.path.join(self.root, 'PkgMirrors.jl.git')
 
 
+class LoggingWriter(object):
+    def __init__(self, logger, logging_level):
+        self.logger = logger
+        self.logging_level = logging_level
+    
+    def write(self, buf):
+        for line in buf.rstrip().splitlines():
+            self.logger.log(self.logging_level, line.rstrip())
+    
+    def flush(self):
+        pass
+
+
+def set_logging(config):
+    logging_level = getattr(logging, config.logging_args[1], None)
+    assert isinstance(logging_level, int)
+    logging.basicConfig(filename=config.logging_args[0], level=logging_level,
+                        format='[%(asctime)s]%(levelname)s:%(message)s', datefmt=Config.DATEFMT)
+    # redirect STDOUT and STDERR.
+    sys.stdout = LoggingWriter(logging, logging.INFO)
+    sys.stderr = LoggingWriter(logging, logging.ERROR)
+
+
 def makedir(path):
     try:
         os.makedirs(path, mode=0o755)
@@ -104,9 +128,8 @@ def cleardir(path):
         os.remove(os.path.join(path, f))
 
 
-def download(url, path_or_filename=None, logging_file=None, logging_level=logging.WARNING):
-    logging.basicConfig(filename=logging_file, level=logging_level,
-                        format='[%(asctime)s]%(levelname)s:%(message)s', datefmt=Config.DATEFMT)
+def download(config, url, path_or_filename=None, logging_file=None, logging_level=logging.WARNING):
+    set_logging(config)
     if path_or_filename is None or os.path.isdir(path_or_filename):
         path = os.getcwd() if path_or_filename is None else path_or_filename
         filename = os.path.join(path, url.split('/')[-1])
@@ -191,17 +214,14 @@ def get_config():
         args.no_packages = True
     if args.no_packages and args.sync_latest_packages:
         raise Exception('--sync-latest-packages must not be used with --no-packages')
-    logging_level = getattr(logging, args.logging_level, None)
-    assert isinstance(logging_level, int)
-    logging.basicConfig(filename=args.logging_file, level=logging_level,
-                        format='[%(asctime)s]%(levelname)s:%(message)s', datefmt=Config.DATEFMT)
     root = os.path.abspath(args.pathname)
     makedir(root)
     config = Config(
         root, not args.no_releases, not args.no_metadata, not args.no_packages, registries,
         args.sync_latest_packages, args.max_processes, args.ignore_invalid_registry,
-        args.temp_dir, (args.logging_file, logging_level), args.mirror_name
+        args.temp_dir, (args.logging_file, args.logging_level), args.mirror_name
     )
+    set_logging(config)
     logging.info('Running with settings:\n%s' % config)
     return config
 
@@ -259,12 +279,12 @@ def initialize(config, status):
 
 def download_all(config, path, urllist):
     with multiprocessing.pool.Pool(config.max_processes) as pool:
-        pool.starmap(download, ((url, os.path.join(path, filename), *config.logging_args)
+        pool.starmap(download, ((config, url, os.path.join(path, filename))
                                 for (filename, url) in urllist))
 
 
 def fetch_releaseinfo(config, status):
-    download(Config.REMOTE_RELEASEINFO, config.releaseinfo_file, *config.logging_args)
+    download(config, Config.REMOTE_RELEASEINFO, config.releaseinfo_file)
     with open(config.releaseinfo_file) as fi:
         meta = json.load(fi)
     return meta
