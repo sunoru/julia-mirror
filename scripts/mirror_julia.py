@@ -526,7 +526,7 @@ def update_package(config, status, package_name, registry):
     makelink(current_dir, os.path.join(linkdir, 'releases'))
     makelink(linkdir, os.path.join(current_dir, package_name))
     urllist = []
-    m = re.match(r'https://github.com/(.*?)/(.*?).git', package['repo'])
+    m = re.match(r'^https://github.com/(.*?)/(.*?)\.git$', package['repo'])
     if m is None:
         # TODO: Add support for non-github registries.
         logging.warning('Packages not on github are currently not supported.')
