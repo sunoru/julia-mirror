@@ -411,6 +411,7 @@ def delete_package(config, package_name, registry_name):
     package_dir = os.path.join(config.registries_dir, registry_name, package_name[0].upper(), package_name)
     files = os.listdir(package_dir) if os.path.isdir(package_dir) else []
     if len(files) == 1 and files[0] == 'releases':
+        logging.info('Deleting renamed or deleted package %s (%s)...' % (package_name, registry_name))
         os.unlink(os.path.join(package_dir, 'releases'))
         remove_empty_dir(package_dir)
     # in packages
