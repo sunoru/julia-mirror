@@ -5,81 +5,113 @@ import json
 import os
 import re
 import requests
+import sys
 
 
-def makepair(url):
-    return [url.split('/')[-1], url]
+VERSION_REGEX = re.compile(r'v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)(-(?P<status>\w+))?')
+
+def compare_version(v1, v2):
+    for v in ('major', 'minor', 'patch'):
+        if v1[v] != v2[v]:
+            return int(v1[v]) > int(v2[v])
+    if v1['status'] is None:
+        return True
+    if v2['status'] is None:
+        return False
+    # Since 'rc3' > 'rc2' > 'pre' > 'beta2' > 'beta' > 'alpha'.
+    # And it's normally impossible to have a status like 'rc10'.
+    return v1['status'] > v2['status']
 
 
-def addurls(versions, version, subversion, table):
-    assert table['class'][0] == 'downloads'
-    get_checksum = False
+def update_versions(versions, tag):
+    m = VERSION_REGEX.match(tag['name'])
+    if m is None:
+        return False
+    m = m.groupdict()
+    version = 'v%s.%s' % (m['major'], m['minor'])
     if version not in versions:
-        versions[version] = {
-            'subversion': subversion,
-            'urllist': []
+        versions[version] = {'subversion': tag['name']}
+    else:
+        ms = VERSION_REGEX.match(versions[version]['subversion']).groupdict()
+        if compare_version(m, ms):
+            versions[version]['subversion'] = tag['name']
+    return True
+
+
+def make_versions():
+    print('Generating version info...')
+    versions = {
+        'latest': {
+            'subversion': 'latest'
         }
-        get_checksum = True
-    urllist = versions[version]['urllist']
-    links = table.find_all('a')
-    for link in links:
-        url = link['href']
-        if any(map(lambda x: url.endswith(x), ['.exe', '.dmg', '.zip', '.tar.gz', '.asc'])):
-            urllist.append(makepair(url))
-    if not get_checksum:
-        return
-    for checksum in ['md5', 'sha256']:
-        url = 'https://julialang-s3.julialang.org/bin/checksums/julia-%s.%s' % (subversion[1:], checksum)
-        t = requests.get(url)
-        if t.ok:
-            urllist.append(makepair(url))
+    }
+    julia_tags = requests.get('https://api.github.com/repos/JuliaLang/julia/tags').json()
+    for tag in julia_tags:
+        update_versions(versions, tag)
+    return versions
+
+
+def make_url(base, path, filename=None):
+    return [
+        filename if filename else os.path.basename(path),
+        os.path.join(base, path)
+    ]
+
+
+def make_urllist(versions):
+    print('Generating URL list...')
+    base_url = 'https://julialang-s3.julialang.org/'
+    github_url = 'https://github.com/JuliaLang/julia/archive/'
+    julia_files = BeautifulSoup(requests.get(base_url).content, 'xml')
+    keys = [key.string for key in julia_files.find_all('Key')]
+    for version in versions:
+        if version == 'latest':
+            continue
+        urllist = versions[version]['urllist'] = []
+        # 'v0.7.0-beta' -> '0.7.0-beta-'
+        subversion_regex = re.compile('%s-' % versions[version]['subversion'][1:])
+        for key in keys:
+            if subversion_regex.search(key) is not None:
+                urllist.append(make_url(base_url, key))
+        urllist.append(
+            make_url(github_url, 'release-%s.tar.gz' % version[1:])
+        )
+    nightly_url = 'https://julialangnightlies-s3.julialang.org/'
+    nightly_files = BeautifulSoup(requests.get(nightly_url).content, 'xml')
+    urllist = versions['latest']['urllist'] = [
+        make_url(nightly_url, key.string)
+        for key in nightly_files.find_all('Key')
+        if key.string.find('latest') >= 0
+    ]
+    urllist.append(make_url(github_url, 'master.tar.gz', 'julia-latest.tar.gz'))
+    return versions
+
+
+def should_update(data, old_data):
+    return old_data is None or data['versions'] != old_data['versions']
 
 
 def main():
-    infofile = os.path.join(os.path.dirname(__file__), '../data/releaseinfo.json')
-
+    if len(sys.argv) not in (2, 3) or os.path.isdir(sys.argv[1]):
+        print('Usage: ./make_releaseinfo.py ../data/releaseinfo.json [force_update=0]')
+        exit(1)
+    infofile = sys.argv[1]
+    force_update = len(sys.argv) == 3 and bool(sys.argv[2])
     data = {
-        'versions': {}
+        'versions': make_urllist(make_versions())
     }
-    versions = data['versions']
-    subversion_regex = re.compile(r'v\d+\.\d+\.\d+(-\w+)?')
-    version_regex = re.compile(r'v\d+\.\d+')
-
-    # Older releases
-    r = requests.get('https://julialang.org/downloads/oldreleases.html')
-    soup = BeautifulSoup(r.content, 'html.parser')
-    h2s = soup.find_all('h2')
-    for h2 in h2s:
-        m = subversion_regex.search(h2.string)
-        subversion = h2.string[m.start():m.end()]
-        version = subversion[:version_regex.search(subversion).end()]
-        table = h2.find_next('table')
-        addurls(versions, version, subversion, table)
-
-    # Current releases
-    r = requests.get('https://julialang.org/downloads/')
-    soup = BeautifulSoup(r.content, 'html.parser')
-    h2s = soup.find_all('h2')
-    for h2 in h2s:
-        m = subversion_regex.search(h2.string)
-        if m is None:
-            continue
-        subversion = h2.string[m.start():m.end()]
-        version = subversion[:version_regex.search(subversion).end()]
-        table = h2.find_next('table')
-        addurls(versions, version, subversion, table)
-
-    # Nightly builds
-    r = requests.get('https://julialang.org/downloads/nightlies.html')
-    soup = BeautifulSoup(r.content, 'html.parser')
-    table = soup.find('table')
-    addurls(versions, 'latest', 'latest', table)
-    versions['latest']['urllist'].append(['julia-latest.tar.gz', 'https://github.com/JuliaLang/julia/archive/master.tar.gz'])
-
     data['last_updated'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    with open(infofile, 'w') as fo:
-        json.dump(data, fo, indent=4)
+    old_data = None
+    if not force_update and os.path.isfile(infofile):
+        with open(infofile) as fi:
+            old_data = json.load(fi)
+    if should_update(data, old_data):
+        with open(infofile, 'w') as fo:
+            json.dump(data, fo, indent=4)
+        print('Release info generated in %s' % infofile)
+    else:
+        print('No update needed.')
 
 
 if __name__ == '__main__':
