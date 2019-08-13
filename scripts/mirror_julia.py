@@ -138,15 +138,13 @@ def download(config, url, path_or_filename=None, logging_file=None, logging_leve
     logging.info('Downloading %s to %s' % (url, filename))
     i = 0
     err = None
+    f = tempfile.NamedTemporaryFile(delete=False)
+    f.close()
     while i < 3:
         try:
-            f = tempfile.NamedTemporaryFile(delete=False)
-            f.close()
             urllib.request.urlretrieve(url, f.name)
             if os.path.isfile(filename):
                 os.unlink(filename)
-            shutil.move(f.name, filename)
-            os.chmod(filename, 0o644)
             i = 4
         except urllib.request.HTTPError as e:
             err = e
@@ -161,9 +159,12 @@ def download(config, url, path_or_filename=None, logging_file=None, logging_leve
             err = e
             i += 1
     if i == 3:
+        os.unlink(f.name)
         logging.error('Failed to download %s' % url)
         logging.error(err)
     else:
+        shutil.move(f.name, filename)
+        os.chmod(filename, 0o644)
         logging.info('Downloaded: %s' % url)
 
 
