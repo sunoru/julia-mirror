@@ -9,6 +9,7 @@ import sys
 
 
 VERSION_REGEX = re.compile(r'v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)(-(?P<status>\w+))?')
+STATUS_TYPES = ['rc', 'pre', 'beta', 'alpha']
 
 def compare_version(v1, v2):
     for v in ('major', 'minor', 'patch'):
@@ -69,7 +70,9 @@ def make_urllist(versions):
             continue
         urllist = versions[version]['urllist'] = []
         # 'v0.7.0-beta' -> '0.7.0-beta-'
-        subversion_regex = re.compile('%s-' % versions[version]['subversion'][1:])
+        subversion_regex = re.compile('%s-(?!(%s))' % (
+            versions[version]['subversion'][1:], '|'.join(STATUS_TYPES)
+        ))
         for key in keys:
             if subversion_regex.search(key) is not None:
                 urllist.append(make_url(base_url, key))
