@@ -1,5 +1,8 @@
 # Julia Mirror
 
+**This project is archived. Please use the official
+[`PkgServer.jl`](https://github.com/JuliaPackaging/PkgServer.jl) instead.**
+
 Scripts for building a mirror for the Julia language.
 
 ## Usage
